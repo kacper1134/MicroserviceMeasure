@@ -4,6 +4,7 @@ import javassist.CtMethod;
 import javassist.NotFoundException;
 import javassist.bytecode.Descriptor;
 import javassist.expr.ExprEditor;
+import javassist.expr.FieldAccess;
 import javassist.expr.MethodCall;
 
 import java.util.*;
@@ -82,14 +83,30 @@ public class ClassInspector {
         return classFieldsInfo;
     }
 
-    public static RelationTypesHolder getMethodRelationsInfo(CtClass clazz, MicroserviceClassesManager manager) {
+    public static ClassRelationTypesHolder getMethodRelationsInfo(CtClass clazz, MicroserviceClassesManager manager) {
         Set<CtMethod> methods = new HashSet<>(List.of(clazz.getDeclaredMethods()));
         methods.addAll(List.of(clazz.getMethods()));
-        RelationTypesHolder holder = new RelationTypesHolder();
+        ClassRelationTypesHolder holder = new ClassRelationTypesHolder();
 
         for (CtMethod method : methods) {
             try {
                 method.instrument(new RelationBuilder(clazz, method, manager, holder));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        return holder;
+    }
+
+    public static FieldRelationTypesHolder getFieldRelationsInfo(CtClass clazz, MicroserviceClassesManager manager) {
+        Set<CtMethod> methods = new HashSet<>(List.of(clazz.getDeclaredMethods()));
+        methods.addAll(List.of(clazz.getMethods()));
+        FieldRelationTypesHolder holder = new FieldRelationTypesHolder();
+
+        for (CtMethod method : methods) {
+            try {
+                method.instrument(new FieldRelationBuilder(clazz, method, manager, holder));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -119,9 +136,9 @@ class RelationBuilder extends ExprEditor {
 
     private final MicroserviceClassesManager manager;
 
-    private final RelationTypesHolder holder;
+    private final ClassRelationTypesHolder holder;
 
-    public RelationBuilder(CtClass callerClass, CtMethod callerMethod, MicroserviceClassesManager manager, RelationTypesHolder holder) {
+    public RelationBuilder(CtClass callerClass, CtMethod callerMethod, MicroserviceClassesManager manager, ClassRelationTypesHolder holder) {
         this.callerClass = callerClass;
         this.callerMethod = callerMethod;
         this.manager = manager;
@@ -169,9 +186,58 @@ class RelationBuilder extends ExprEditor {
 }
 
 
-class RelationTypesHolder {
+class FieldRelationBuilder extends ExprEditor {
+    private final CtClass callerClass;
+    private final CtMethod callerMethod;
+    private final MicroserviceClassesManager manager;
+    private final FieldRelationTypesHolder holder;
+
+    public FieldRelationBuilder(CtClass callerClass, CtMethod callerMethod, MicroserviceClassesManager manager, FieldRelationTypesHolder holder) {
+        this.callerClass = callerClass;
+        this.callerMethod = callerMethod;
+        this.manager = manager;
+        this.holder = holder;
+    }
+
+    @Override
+    public void edit(FieldAccess f) {
+        String fieldName = f.getFieldName();
+        String calledClassName = f.getClassName();
+
+        StringBuilder callerMethodSignature = new StringBuilder(callerMethod.getName() + "(");
+        ClassInspector.getMethodSignature(callerMethodSignature, callerMethod.getSignature());
+
+        if (manager.isClassDeclared(calledClassName)) {
+            boolean isCallerClassApi = ApiClassChecker.isApiClass(callerClass);
+            String info = callerClass.getName() + "||" + callerMethodSignature + "||" + calledClassName + "||" + fieldName;
+
+            boolean isRecursive = callerClass.getName().equals(calledClassName);
+
+            if(isRecursive) return;
+
+            if(isCallerClassApi) {
+                if (holder.fieldInterfaceRelation.containsKey(info))
+                    holder.fieldInterfaceRelation.put(info, holder.fieldInterfaceRelation.get(info) + 1);
+                else
+                    holder.fieldInterfaceRelation.put(info, 1);
+            } else {
+                if (holder.fieldClassRelation.containsKey(info))
+                    holder.fieldClassRelation.put(info, holder.fieldClassRelation.get(info) + 1);
+                else
+                    holder.fieldClassRelation.put(info, 1);
+            }
+        }
+    }
+}
+
+class ClassRelationTypesHolder {
     public final HashMap<String, Integer> classToClassRelation = new HashMap<>();
     public final HashMap<String, Integer> classToInterfaceRelation = new HashMap<>();
     public final HashMap<String, Integer> interfaceToClassRelation = new HashMap<>();
     public final HashMap<String, Integer> interfaceToInterfaceRelation = new HashMap<>();
+}
+
+class FieldRelationTypesHolder {
+    public final HashMap<String, Integer> fieldClassRelation = new HashMap<>();
+    public final HashMap<String, Integer> fieldInterfaceRelation = new HashMap<>();
 }

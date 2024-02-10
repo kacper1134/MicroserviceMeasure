@@ -36,6 +36,9 @@ public class Main {
             HashMap<String, Integer> interfaceToClassRelation = new HashMap<>();
             HashMap<String, Integer> interfaceToInterfaceRelation = new HashMap<>();
 
+            HashMap<String, Integer> fieldClassRelation = new HashMap<>();
+            HashMap<String, Integer> fieldInterfaceRelation = new HashMap<>();
+
             for(String className : classNames) {
                 CtClass clazz = manager.getClass(className);
                 if(ApiClassChecker.isApiClass(clazz)) {
@@ -44,11 +47,16 @@ public class Main {
                     classesInfo.addAll(ClassInspector.getMethodsInfo(clazz, false));
                 }
                 fieldsInfo.addAll(ClassInspector.getFieldsInfo(clazz));
-                RelationTypesHolder holder = ClassInspector.getMethodRelationsInfo(clazz, manager);
+
+                ClassRelationTypesHolder holder = ClassInspector.getMethodRelationsInfo(clazz, manager);
                 classToClassRelation.putAll(holder.classToClassRelation);
                 classToInterfaceRelation.putAll(holder.classToInterfaceRelation);
                 interfaceToClassRelation.putAll(holder.interfaceToClassRelation);
                 interfaceToInterfaceRelation.putAll(holder.interfaceToInterfaceRelation);
+
+                FieldRelationTypesHolder fieldHolder = ClassInspector.getFieldRelationsInfo(clazz, manager);
+                fieldClassRelation.putAll(fieldHolder.fieldClassRelation);
+                fieldInterfaceRelation.putAll(fieldHolder.fieldInterfaceRelation);
             }
 
             StructureWriter.writeAboutClassMethodsInfo(projectName, microserviceName, classesInfo);
@@ -58,6 +66,8 @@ public class Main {
             StructureWriter.writeAboutClassToInterfaceRelations(projectName, microserviceName, classToInterfaceRelation);
             StructureWriter.writeAboutInterfaceToClassRelations(projectName, microserviceName, interfaceToClassRelation);
             StructureWriter.writeAboutInterfaceToInterfaceRelations(projectName, microserviceName, interfaceToInterfaceRelation);
+            StructureWriter.writeAboutFieldClassRelations(projectName, microserviceName, fieldClassRelation);
+            StructureWriter.writeAboutFieldInterfaceRelations(projectName, microserviceName, fieldInterfaceRelation);
 
             LOG.info("Microservice processed: " + microserviceName);
             LOG.info("\n");

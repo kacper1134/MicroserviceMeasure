@@ -30,7 +30,7 @@ public class StructureWriter {
                         }
                     });
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.info("No files to delete in directory: " + projectDirectory);
         }
     }
 
@@ -93,6 +93,26 @@ public class StructureWriter {
         String[] headers = {"Source Interface Name", "Source Operation Signature", "Target Interface Name", "Target Operation Signature", "Weight"};
         writeInfoToFile(projectName, microserviceName, structureInfo, sheetName, headers);
         LOG.info("Interface to interface relations info written to file.");
+    }
+
+    public static void writeAboutFieldClassRelations(String projectName, String microserviceName, HashMap<String, Integer> fieldRelations) {
+        ArrayList<String> structureInfo = fieldRelations.entrySet().stream()
+                .map(entry -> entry.getKey() + "||" + entry.getValue())
+                .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+        String sheetName = "fieldClassRelations";
+        String[] headers = {"Source Class Name", "Source Field Name", "Target Class Name", "Target Field Name", "Weight"};
+        writeInfoToFile(projectName, microserviceName, structureInfo, sheetName, headers);
+        LOG.info("Field to class relations info written to file.");
+    }
+
+    public static void writeAboutFieldInterfaceRelations(String projectName, String microserviceName, HashMap<String, Integer> fieldRelations) {
+        ArrayList<String> structureInfo = fieldRelations.entrySet().stream()
+                .map(entry -> entry.getKey() + "||" + entry.getValue())
+                .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+        String sheetName = "fieldInterfaceRelations";
+        String[] headers = {"Source Class Name", "Source Field Name", "Target Interface Name", "Target Field Name", "Weight"};
+        writeInfoToFile(projectName, microserviceName, structureInfo, sheetName, headers);
+        LOG.info("Field to interface relations info written to file.");
     }
 
     public static void writeInfoToFile(String projectName, String microserviceName, ArrayList<String> structureInfo, String sheetName, String[] headers) {

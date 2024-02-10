@@ -34,6 +34,25 @@ public class StructureWriter {
         }
     }
 
+    public static void writeMicroserviceNamesToFile(String projectName, ArrayList<String> microserviceNames) {
+        String filePath = "../data/" + projectName + "/svc_info.txt";
+        createDirectoryIfNotExists(filePath);
+
+        try (FileOutputStream fileOut = new FileOutputStream(filePath)) {
+            int count = 0;
+            for (String microserviceName : microserviceNames) {
+                count++;
+                if (count == microserviceNames.size()) {
+                    fileOut.write(microserviceName.getBytes());
+                } else {
+                    fileOut.write((microserviceName + ",").getBytes());
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void writeAboutClassMethodsInfo(String projectName, String microserviceName, ArrayList<String> methodInfo) {
         String sheetName = "classMethods";
         String[] headers = {"Class Name", "Method Signature", "Method Modifier", "Return Type"};
@@ -115,8 +134,19 @@ public class StructureWriter {
         LOG.info("Field to interface relations info written to file.");
     }
 
-    public static void writeInfoToFile(String projectName, String microserviceName, ArrayList<String> structureInfo, String sheetName, String[] headers) {
-        String filePath = "src/main/resources/" + projectName + "/" + microserviceName + "_structure2.xlsx";
+    public static void writeAboutMicroserviceFeignRelations(String projectName, HashMap<String, Integer> microserviceRelationsInfo) {
+        ArrayList<String> structureInfo = microserviceRelationsInfo.entrySet().stream()
+                .map(entry -> entry.getKey() + "||" + entry.getValue())
+                .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+
+        String sheetName = "feignRelations";
+        String[] headers = {"Source Service Name", "Source Class Name", "Source Method Signature", "Target Service Name", "Target Interface Name", "Target Operation Signature"};
+        writeInfoToFile(projectName, projectName, structureInfo, sheetName, headers);
+        LOG.info("Microservice feign relations info written to file.");
+    }
+
+    private static void writeInfoToFile(String projectName, String microserviceName, ArrayList<String> structureInfo, String sheetName, String[] headers) {
+        String filePath = "../data/" + projectName + "/" + microserviceName + "_structure.xlsx";
         createDirectoryIfNotExists(filePath);
 
         try (Workbook workbook = getWorkbook(filePath)) {

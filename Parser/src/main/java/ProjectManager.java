@@ -1,9 +1,15 @@
+import java.io.File;
 import java.util.*;
 
 public class ProjectManager {
     private static final Map<String, MicroserviceClassesManager> microserviceClassesManagerMap = new HashMap<>();
 
     private static final Set<String> microserviceNames = new HashSet<>();
+
+    public static void reset() {
+        microserviceClassesManagerMap.clear();
+        microserviceNames.clear();
+    }
 
     public static ArrayList<String> getMicroserviceNames() {
         return new ArrayList<>(microserviceNames);
@@ -27,5 +33,19 @@ public class ProjectManager {
             }
         }
         return null;
+    }
+
+    public static ArrayList<String> getProjectNames(String directoryPath) {
+        ArrayList<String> projectNames = new ArrayList<>();
+        File directory = new File(directoryPath);
+        File[] files = directory.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    projectNames.add(file.getName());
+                }
+            }
+        }
+        return projectNames;
     }
 }

@@ -14,7 +14,7 @@ from code.types.project import Project
 
 def store_data_about_method_relations(microservices: Dict[str, List[str]], projects: Dict[str, Project],
                                       root_dir='../data') -> None:
-    for relation_type in ["data3", "data6", "data8", "data9"]:
+    for relation_type in ["classToClassRelations", "classToInterfaceRelations", "interfaceToClassRelations", "interfaceToInterfaceRelations"]:
         for project_name in os.listdir(root_dir):
             for service in microservices.get(project_name, []):
                 file_path = get_file_path(root_dir, project_name, service)
@@ -28,7 +28,7 @@ def store_data_about_method_relations(microservices: Dict[str, List[str]], proje
 
 def store_data_about_field_relations(microservices: Dict[str, List[str]], projects: Dict[str, Project],
                                      root_dir='../data') -> None:
-    for relation_type in ["data4", "data7"]:
+    for relation_type in ["fieldClassRelations", "fieldInterfaceRelations"]:
         for project_name in os.listdir(root_dir):
             for service in microservices.get(project_name, []):
                 file_path = get_file_path(root_dir, project_name, service)
@@ -42,7 +42,7 @@ def store_data_about_field_relations(microservices: Dict[str, List[str]], projec
 
 def store_data_about_microservice_relations(projects: Dict[str, Project],
                                             root_dir='../data') -> None:
-    for relation_type in ["data1"]:
+    for relation_type in ["feignRelations"]:
         for project_name in os.listdir(root_dir):
             file_path = get_file_path_for_microservice_structure(root_dir, project_name)
             data = pd.read_excel(file_path, sheet_name=relation_type, engine="openpyxl")

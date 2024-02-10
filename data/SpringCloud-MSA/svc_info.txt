@@ -1,1 +1,1 @@
-product,review,inventory,gateway
+registry,product,review,inventory,gateway

@@ -17,7 +17,7 @@ def store_data_about_class_method(microservices: Dict[str, List[str]], root_dir=
 
         for service in microservices.get(project_name, []):
             file_path = get_file_path(root_dir, project_name, service)
-            data = pd.read_excel(file_path, sheet_name="data1", engine="openpyxl")
+            data = pd.read_excel(file_path, sheet_name="classMethods", engine="openpyxl")
 
             microservice = Microservice(service)
 
@@ -34,7 +34,7 @@ def store_data_about_interface_method(microservices: Dict[str, List[str]], proje
     for project_name in os.listdir(root_dir):
         for service in microservices.get(project_name, []):
             file_path = get_file_path(root_dir, project_name, service)
-            data = pd.read_excel(file_path, sheet_name="data5", engine="openpyxl")
+            data = pd.read_excel(file_path, sheet_name="interfaceOperations", engine="openpyxl")
 
             microservice = projects[project_name].microservices[service]
 

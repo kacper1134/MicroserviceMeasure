@@ -1,7 +1,6 @@
 from code.data_reader.fields_data_reader import store_data_about_class_fields
 from code.data_reader.relations_data_reader import store_data_about_method_relations, store_data_about_field_relations, \
     store_data_about_microservice_relations
-from code.types.microservice import Microservice
 from code.types.project import Project
 from code.data_reader.data_reader import get_list_of_microservices_for_each_project
 from code.data_reader.methods_data_reader import store_data_about_class_method, store_data_about_interface_method

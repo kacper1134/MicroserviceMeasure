@@ -15,7 +15,7 @@ def store_data_about_class_fields(microservices: Dict[str, List[str]], projects:
     for project_name in os.listdir(root_dir):
         for service in microservices.get(project_name, []):
             file_path = get_file_path(root_dir, project_name, service)
-            data = pd.read_excel(file_path, sheet_name="data2", engine="openpyxl")
+            data = pd.read_excel(file_path, sheet_name="classFields", engine="openpyxl")
 
             microservice = projects[project_name].microservices[service]
 

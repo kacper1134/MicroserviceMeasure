@@ -6,6 +6,7 @@ import javassist.bytecode.Descriptor;
 import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
 import javassist.expr.MethodCall;
+import lombok.AllArgsConstructor;
 
 import java.util.*;
 
@@ -90,7 +91,7 @@ public class ClassInspector {
 
         for (CtMethod method : methods) {
             try {
-                method.instrument(new RelationBuilder(clazz, method, manager, holder));
+                method.instrument(new ClassRelationBuilder(clazz, method, manager, holder));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -130,20 +131,14 @@ public class ClassInspector {
     }
 }
 
-class RelationBuilder extends ExprEditor {
+@AllArgsConstructor
+class ClassRelationBuilder extends ExprEditor {
     private final CtClass callerClass;
     private final CtMethod callerMethod;
 
     private final MicroserviceClassesManager manager;
 
     private final ClassRelationTypesHolder holder;
-
-    public RelationBuilder(CtClass callerClass, CtMethod callerMethod, MicroserviceClassesManager manager, ClassRelationTypesHolder holder) {
-        this.callerClass = callerClass;
-        this.callerMethod = callerMethod;
-        this.manager = manager;
-        this.holder = holder;
-    }
 
     @Override
     public void edit(MethodCall m) {
@@ -153,8 +148,8 @@ class RelationBuilder extends ExprEditor {
         ClassInspector.getMethodSignature(callerMethodSignature, callerMethod.getSignature());
         if (manager.isClassDeclared(m.getClassName())) {
             CtClass calledClass = manager.getClass(m.getClassName());
-            boolean isCallerClassApi = ApiClassChecker.isApiClass(callerClass);
-            boolean isCalledClassApi = ApiClassChecker.isApiClass(calledClass);
+            boolean isCallerClassApi = Utility.isApiClass(callerClass);
+            boolean isCalledClassApi = Utility.isApiClass(calledClass);
             String info = callerClass.getName() + "||" + callerMethodSignature + "||" + calledClass.getName() + "||" + calledMethodSignature;
 
             boolean isRecursive = callerClass.getName().equals(calledClass.getName());
@@ -185,19 +180,12 @@ class RelationBuilder extends ExprEditor {
     }
 }
 
-
+@AllArgsConstructor
 class FieldRelationBuilder extends ExprEditor {
     private final CtClass callerClass;
     private final CtMethod callerMethod;
     private final MicroserviceClassesManager manager;
     private final FieldRelationTypesHolder holder;
-
-    public FieldRelationBuilder(CtClass callerClass, CtMethod callerMethod, MicroserviceClassesManager manager, FieldRelationTypesHolder holder) {
-        this.callerClass = callerClass;
-        this.callerMethod = callerMethod;
-        this.manager = manager;
-        this.holder = holder;
-    }
 
     @Override
     public void edit(FieldAccess f) {
@@ -208,7 +196,7 @@ class FieldRelationBuilder extends ExprEditor {
         ClassInspector.getMethodSignature(callerMethodSignature, callerMethod.getSignature());
 
         if (manager.isClassDeclared(calledClassName)) {
-            boolean isCallerClassApi = ApiClassChecker.isApiClass(callerClass);
+            boolean isCallerClassApi = Utility.isApiClass(callerClass);
             String info = callerClass.getName() + "||" + callerMethodSignature + "||" + calledClassName + "||" + fieldName;
 
             boolean isRecursive = callerClass.getName().equals(calledClassName);

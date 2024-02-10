@@ -10,7 +10,18 @@ public class Main {
     private static final Logger LOG = LogManager.getLogger(StructureWriter.class);
 
     public static void main(String[] args) throws IOException {
-        String projectName = "mall-swarm";
+        ArrayList<String> projectNames = ProjectManager.getProjectNames("C:\\Users\\Kacper\\Desktop\\data\\");
+        for(String projectName : projectNames) {
+            MicroserviceInspector.reset();
+            ProjectManager.reset();
+            LOG.info("Processing project: " + projectName);
+            processProject(projectName);
+            LOG.info("Project processed: " + projectName);
+            LOG.info("\n");
+        }
+    }
+
+    public static void processProject(String projectName) throws IOException {
         String[] classFilePaths = ClassFinder.findClassFiles("C:\\Users\\Kacper\\Desktop\\data\\" + projectName).toArray(new String[0]);
 
         for (String classFilePath : classFilePaths) {
@@ -20,7 +31,8 @@ public class Main {
             microserviceClassesManager.loadClass(classFilePath);
         }
 
-        StructureWriter.deleteFilesInDirectory("src/main/resources/" + projectName);
+        StructureWriter.deleteFilesInDirectory("../data/" + projectName);
+        StructureWriter.writeMicroserviceNamesToFile(projectName, ProjectManager.getMicroserviceNames());
 
         for(String microserviceName : ProjectManager.getMicroserviceNames()) {
             LOG.info("Processing microservice: " + microserviceName);
@@ -41,11 +53,14 @@ public class Main {
 
             for(String className : classNames) {
                 CtClass clazz = manager.getClass(className);
-                if(ApiClassChecker.isApiClass(clazz)) {
+                if(Utility.isApiClass(clazz)) {
                     interfacesInfo.addAll(ClassInspector.getMethodsInfo(clazz, true));
                 } else {
                     classesInfo.addAll(ClassInspector.getMethodsInfo(clazz, false));
                 }
+
+                MicroserviceInspector.processClass(microserviceName, clazz);
+
                 fieldsInfo.addAll(ClassInspector.getFieldsInfo(clazz));
 
                 ClassRelationTypesHolder holder = ClassInspector.getMethodRelationsInfo(clazz, manager);
@@ -72,5 +87,19 @@ public class Main {
             LOG.info("Microservice processed: " + microserviceName);
             LOG.info("\n");
         }
+
+        HashMap<String, Integer> microServiceRelationInfo = new HashMap<>();
+
+        for(String microserviceName : ProjectManager.getMicroserviceNames()) {
+            MicroserviceClassesManager manager = ProjectManager.getMicroserviceClassesManager(microserviceName);
+            ArrayList<String> classNames = manager.getClassNames();
+
+            for (String className : classNames) {
+                CtClass clazz = manager.getClass(className);
+                microServiceRelationInfo.putAll(MicroserviceInspector.getMicroserviceRelationsInfo(microserviceName, clazz));
+            }
+        }
+
+        StructureWriter.writeAboutMicroserviceFeignRelations(projectName, microServiceRelationInfo);
     }
 }

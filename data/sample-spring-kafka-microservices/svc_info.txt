@@ -1,0 +1,1 @@
+stock-service,base-domain,payment-service,order-service

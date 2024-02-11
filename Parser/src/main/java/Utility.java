@@ -1,12 +1,17 @@
 import javassist.CtMethod;
 import lombok.SneakyThrows;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.kafka.annotation.KafkaHandler;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javassist.CtClass;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Utility {
     public static boolean isApiClass(CtClass ctClass) {
@@ -39,6 +44,18 @@ public class Utility {
                 ctMethod.hasAnnotation(DeleteMapping.class) ||
                 ctMethod.hasAnnotation(PatchMapping.class) ||
                 ctMethod.hasAnnotation(RequestMapping.class);
+    }
+
+    public static boolean isKafkaConsumerFunction(CtMethod ctMethod) {
+        return ctMethod.hasAnnotation(KafkaListener.class);
+    }
+
+    public static boolean isKafkaConsumerClass(CtClass ctClass) {
+        return ctClass.hasAnnotation(KafkaListener.class);
+    }
+
+    public static boolean isKafkaHandlerFunction(CtMethod ctMethod) {
+        return ctMethod.hasAnnotation(KafkaHandler.class);
     }
 
     @SneakyThrows
@@ -104,6 +121,108 @@ public class Utility {
     public static String getFeignClientName(CtClass ctClass) {
         FeignClient feignClient = (FeignClient) ctClass.getAnnotation(FeignClient.class);
         return feignClient.value();
+    }
+
+    @SneakyThrows
+    public static ArrayList<String> getKafkaTopics(CtMethod ctMethod) {
+        KafkaListener kafkaListener = (KafkaListener) ctMethod.getAnnotation(KafkaListener.class);
+        if(kafkaListener != null) {
+            return new ArrayList<>(Arrays.stream(kafkaListener.topics()).toList());
+        }
+        return new ArrayList<>();
+    }
+
+    @SneakyThrows
+    public static ArrayList<String> getKafkaTopics(CtClass ctClass) {
+        KafkaListener kafkaListener = (KafkaListener) ctClass.getAnnotation(KafkaListener.class);
+        if(kafkaListener != null) {
+            return new ArrayList<>(Arrays.stream(kafkaListener.topics()).toList());
+        }
+        return new ArrayList<>();
+    }
+
+    public static String extractKafkaTopicFromKafkaInstruction(String filePath, String instruction, MicroserviceClassesManager manager, String fullCurrentClassName) {
+        String topicParameterValue = extractTopicParameterValueFromInstruction(instruction);
+
+        if(topicParameterValue == null) {
+            return null;
+        }
+
+        if(isStringLiteral(topicParameterValue)) {
+            return topicParameterValue.substring(1, topicParameterValue.length() - 1);
+        }
+
+        String simpleClassName = extractClassNameFromTopicParameter(topicParameterValue);
+        String fullClassName = fullCurrentClassName;
+
+        String fieldName = extractFieldNameFromTopicParameter(topicParameterValue);
+        if (simpleClassName != null) {
+            fullClassName = JavaFileReader.getFullClassNameFromImportStatement(simpleClassName, filePath);
+        }
+
+        topicParameterValue = JavaFileReader.getValueOfField(manager.getFilePath(fullClassName), fieldName);
+
+        ArrayList<String> staticImportClasses = JavaFileReader.getStaticImportClasses(manager.getFilePath(fullClassName));
+
+        for (String staticImportClass : staticImportClasses) {
+            topicParameterValue = JavaFileReader.getValueOfField(manager.getFilePath(staticImportClass), fieldName);
+            if (topicParameterValue != null) {
+                break;
+            }
+        }
+
+        if(topicParameterValue != null && isStringLiteral(topicParameterValue)) {
+            return topicParameterValue.substring(1, topicParameterValue.length() - 1);
+        }
+
+        return null;
+    }
+
+    private static String extractTopicParameterValueFromInstruction(String instruction) {
+        Pattern sendPattern = Pattern.compile("\\.send\\(\\s*([^,]+)\\s*,");
+        Pattern receivePattern = Pattern.compile("\\.receive\\(\\s*([^,]+)\\s*,");
+        Pattern streamPattern = Pattern.compile("\\.stream\\(\\s*([^,]+)\\s*,");
+
+        Matcher sendMatcher = sendPattern.matcher(instruction);
+        Matcher receiveMatcher = receivePattern.matcher(instruction);
+        Matcher streamMatcher = streamPattern.matcher(instruction);
+
+        if (sendMatcher.find()) {
+            return sendMatcher.group(1).trim().replace("\")", "\"");
+        }
+        if (receiveMatcher.find()) {
+            return receiveMatcher.group(1).trim().replace("\")", "\"");
+        }
+        if (streamMatcher.find()) {
+            return streamMatcher.group(1).trim().replace("\")", "\"");
+        }
+        return null;
+    }
+
+    private static String extractClassNameFromTopicParameter(String topicParameter) {
+        Pattern pattern = Pattern.compile("([\\w$]+)\\.");
+        Matcher matcher = pattern.matcher(topicParameter);
+
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            return null;
+        }
+    }
+
+    private static String extractFieldNameFromTopicParameter(String topicParameter) {
+        Pattern pattern = Pattern.compile("(?:[\\w$]+\\.)?(\\w+)(?:\\.\\(\\))?");
+        Matcher matcher = pattern.matcher(topicParameter);
+
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            return null;
+        }
+    }
+
+    private static boolean isStringLiteral(String value) {
+        return value.startsWith("\"") && value.endsWith("\"");
     }
 
     private static boolean hasAnnotation(CtClass ctClass, Class<?> annotationClass) {

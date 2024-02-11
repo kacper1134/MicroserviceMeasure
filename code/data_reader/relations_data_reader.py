@@ -42,7 +42,7 @@ def store_data_about_field_relations(microservices: Dict[str, List[str]], projec
 
 def store_data_about_microservice_relations(projects: Dict[str, Project],
                                             root_dir='../data') -> None:
-    for relation_type in ["feignRelations"]:
+    for relation_type in ["feignRelations", "kafkaRelations"]:
         for project_name in os.listdir(root_dir):
             file_path = get_file_path_for_microservice_structure(root_dir, project_name)
             data = pd.read_excel(file_path, sheet_name=relation_type, engine="openpyxl")

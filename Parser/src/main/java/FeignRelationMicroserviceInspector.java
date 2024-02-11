@@ -9,7 +9,7 @@ import lombok.ToString;
 
 import java.util.*;
 
-public class MicroserviceInspector {
+public class FeignRelationMicroserviceInspector {
 
     public static final HashMap<String, Endpoint> endpoints = new HashMap<>();
     public static final HashMap<String, FeignRelation> relations = new HashMap<>();
@@ -103,9 +103,9 @@ class MicroserviceRelationBuilder extends ExprEditor {
 
         String feignRelationKey = inMicroserviceName + "." + m.getClassName() + "." + calledMethodSignature;
 
-        if (MicroserviceInspector.relations.containsKey(feignRelationKey)) {
-            FeignRelation relation = MicroserviceInspector.relations.get(feignRelationKey);
-            Endpoint endpoint = MicroserviceInspector.endpoints.get(relation.getOutMicroServiceName() + "." + relation.getPath() + "." + relation.getHttpMethod());
+        if (FeignRelationMicroserviceInspector.relations.containsKey(feignRelationKey)) {
+            FeignRelation relation = FeignRelationMicroserviceInspector.relations.get(feignRelationKey);
+            Endpoint endpoint = FeignRelationMicroserviceInspector.endpoints.get(relation.getOutMicroServiceName() + "." + relation.getPath() + "." + relation.getHttpMethod());
             if(endpoint != null) {
                 String info = inMicroserviceName + "||" + callerClass.getName() + "||" + callerMethodSignature + "||" + relation.getOutMicroServiceName() + "||" + endpoint.getClassName() + "||" + endpoint.getMethodSignature();
                 if (microserviceRelationsInfo.containsKey(info)) {

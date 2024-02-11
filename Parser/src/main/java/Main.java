@@ -12,7 +12,9 @@ public class Main {
     public static void main(String[] args) throws IOException {
         ArrayList<String> projectNames = ProjectManager.getProjectNames("C:\\Users\\Kacper\\Desktop\\data\\");
         for(String projectName : projectNames) {
-            MicroserviceInspector.reset();
+            MicroserviceClassesManager.clear();
+            FeignRelationMicroserviceInspector.reset();
+            KafkaRelationMicroserviceInspector.reset();
             ProjectManager.reset();
             LOG.info("Processing project: " + projectName);
             processProject(projectName);
@@ -59,7 +61,8 @@ public class Main {
                     classesInfo.addAll(ClassInspector.getMethodsInfo(clazz, false));
                 }
 
-                MicroserviceInspector.processClass(microserviceName, clazz);
+                FeignRelationMicroserviceInspector.processClass(microserviceName, clazz);
+                KafkaRelationMicroserviceInspector.processClass(microserviceName, clazz, manager);
 
                 fieldsInfo.addAll(ClassInspector.getFieldsInfo(clazz));
 
@@ -96,10 +99,11 @@ public class Main {
 
             for (String className : classNames) {
                 CtClass clazz = manager.getClass(className);
-                microServiceRelationInfo.putAll(MicroserviceInspector.getMicroserviceRelationsInfo(microserviceName, clazz));
+                microServiceRelationInfo.putAll(FeignRelationMicroserviceInspector.getMicroserviceRelationsInfo(microserviceName, clazz));
             }
         }
 
         StructureWriter.writeAboutMicroserviceFeignRelations(projectName, microServiceRelationInfo);
+        StructureWriter.writeAboutMicroserviceKafkaRelations(projectName, KafkaRelationMicroserviceInspector.getMicroserviceRelationsInfo());
     }
 }

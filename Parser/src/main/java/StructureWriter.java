@@ -140,9 +140,20 @@ public class StructureWriter {
                 .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
 
         String sheetName = "feignRelations";
-        String[] headers = {"Source Service Name", "Source Class Name", "Source Method Signature", "Target Service Name", "Target Interface Name", "Target Operation Signature"};
+        String[] headers = {"Source Service Name", "Source Class Name", "Source Method Signature", "Target Service Name", "Target Interface Name", "Target Operation Signature", "Weight"};
         writeInfoToFile(projectName, projectName, structureInfo, sheetName, headers);
         LOG.info("Microservice feign relations info written to file.");
+    }
+
+    public static void writeAboutMicroserviceKafkaRelations(String projectName, HashMap<String, Integer> microserviceRelationsInfo) {
+        ArrayList<String> structureInfo = microserviceRelationsInfo.entrySet().stream()
+                .map(entry -> entry.getKey() + "||" + entry.getValue())
+                .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+
+        String sheetName = "kafkaRelations";
+        String[] headers = {"Source Service Name", "Source Class Name", "Source Method Signature", "Target Service Name", "Target Class Name", "Target Method Signature", "Topic", "Weight"};
+        writeInfoToFile(projectName, projectName, structureInfo, sheetName, headers);
+        LOG.info("Microservice kafka relations info written to file.");
     }
 
     private static void writeInfoToFile(String projectName, String microserviceName, ArrayList<String> structureInfo, String sheetName, String[] headers) {
@@ -200,5 +211,4 @@ public class StructureWriter {
         }
         return sheet;
     }
-
 }

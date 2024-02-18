@@ -160,12 +160,12 @@ public class Utility {
             fullClassName = JavaFileReader.getFullClassNameFromImportStatement(simpleClassName, filePath);
         }
 
-        topicParameterValue = JavaFileReader.getValueOfField(manager.getFilePath(fullClassName), fieldName);
+        topicParameterValue = JavaFileReader.getValueOfField(manager.getPathToJavaFile(fullClassName), fieldName);
 
-        ArrayList<String> staticImportClasses = JavaFileReader.getStaticImportClasses(manager.getFilePath(fullClassName));
+        ArrayList<String> staticImportClasses = JavaFileReader.getStaticImportClasses(manager.getPathToJavaFile(fullClassName));
 
         for (String staticImportClass : staticImportClasses) {
-            topicParameterValue = JavaFileReader.getValueOfField(manager.getFilePath(staticImportClass), fieldName);
+            topicParameterValue = JavaFileReader.getValueOfField(manager.getPathToJavaFile(staticImportClass), fieldName);
             if (topicParameterValue != null) {
                 break;
             }

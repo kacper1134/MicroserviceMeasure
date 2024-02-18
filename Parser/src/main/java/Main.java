@@ -3,13 +3,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 public class Main {
-    private static final Logger LOG = LogManager.getLogger(StructureWriter.class);
+    private static final Logger LOG = LogManager.getLogger(Main.class);
 
     public static void main(String[] args) throws IOException {
+        Arrays.stream(java.util.logging.LogManager.getLogManager().getLogger("").getHandlers()).forEach(h -> h.setLevel(Level.SEVERE));
         ArrayList<String> projectNames = ProjectManager.getProjectNames("C:\\Users\\Kacper\\Desktop\\data\\");
         for(String projectName : projectNames) {
             MicroserviceClassesManager.clear();
@@ -77,6 +80,10 @@ public class Main {
                 fieldInterfaceRelation.putAll(fieldHolder.fieldInterfaceRelation);
             }
 
+            ArrayList<String> numberOfLines = processNumberOfLines(microserviceName, classNames);
+            ArrayList<String> classNumberOfLines = extractClassNumberOfLines(numberOfLines);
+            ArrayList<String> methodNumberOfLines = extractMethodNumberOfLines(numberOfLines);
+
             StructureWriter.writeAboutClassMethodsInfo(projectName, microserviceName, classesInfo);
             StructureWriter.writeAboutInterfaceMethodsInfo(projectName, microserviceName, interfacesInfo);
             StructureWriter.writeAboutFieldsInfo(projectName, microserviceName, fieldsInfo);
@@ -86,6 +93,8 @@ public class Main {
             StructureWriter.writeAboutInterfaceToInterfaceRelations(projectName, microserviceName, interfaceToInterfaceRelation);
             StructureWriter.writeAboutFieldClassRelations(projectName, microserviceName, fieldClassRelation);
             StructureWriter.writeAboutFieldInterfaceRelations(projectName, microserviceName, fieldInterfaceRelation);
+            StructureWriter.writeAboutClassNumberOfLines(projectName, microserviceName, classNumberOfLines);
+            StructureWriter.writeAboutMethodNumberOfLines(projectName, microserviceName, methodNumberOfLines);
 
             LOG.info("Microservice processed: " + microserviceName);
             LOG.info("\n");
@@ -105,5 +114,40 @@ public class Main {
 
         StructureWriter.writeAboutMicroserviceFeignRelations(projectName, microServiceRelationInfo);
         StructureWriter.writeAboutMicroserviceKafkaRelations(projectName, KafkaRelationMicroserviceInspector.getMicroserviceRelationsInfo());
+    }
+
+    public static ArrayList<String> processNumberOfLines(String microserviceName, ArrayList<String> classNames) {
+        List<CompletableFuture<String>> futures = classNames.stream()
+                .map(className -> CompletableFuture.supplyAsync(() -> {
+                    MicroserviceClassesManager manager = ProjectManager.getMicroserviceClassesManager(microserviceName);
+                    return ClassInspector.getNumberOfLines(manager.getClass(className), manager);
+                })).toList();
+
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .thenApply(v -> futures.stream()
+                        .map(CompletableFuture::join)
+                        .collect(Collectors.toCollection(ArrayList::new)))
+                .join();
+    }
+
+    public static ArrayList<String> extractClassNumberOfLines(ArrayList<String> numberOfLines) {
+        ArrayList<String> classNumberOfLines = new ArrayList<>();
+        for (String line : numberOfLines) {
+            String[] lines = line.split("\n");
+            classNumberOfLines.add(lines[0]);
+        }
+        return classNumberOfLines;
+    }
+
+    public static ArrayList<String> extractMethodNumberOfLines(ArrayList<String> numberOfLines) {
+        ArrayList<String> methodNumberOfLines = new ArrayList<>();
+        for (String line : numberOfLines) {
+            String[] lines = line.split("\n");
+            for (int i = 1; i < lines.length; i++) {
+                if(!lines[i].contains("||")) continue;
+                methodNumberOfLines.add(lines[i]);
+            }
+        }
+        return methodNumberOfLines;
     }
 }

@@ -156,6 +156,20 @@ public class StructureWriter {
         LOG.info("Microservice kafka relations info written to file.");
     }
 
+    public static void writeAboutClassNumberOfLines(String projectName, String microserviceName, ArrayList<String> classNumberOfLines) {
+        String sheetName = "classNumberOfLines";
+        String[] headers = {"Class Name", "Number of Lines"};
+        writeInfoToFile(projectName, microserviceName, classNumberOfLines, sheetName, headers);
+        LOG.info("Class number of lines info written to file.");
+    }
+
+    public static void writeAboutMethodNumberOfLines(String projectName, String microserviceName, ArrayList<String> methodNumberOfLines) {
+        String sheetName = "methodNumberOfLines";
+        String[] headers = {"Class Name", "Method Signature", "Number of Lines"};
+        writeInfoToFile(projectName, microserviceName, methodNumberOfLines, sheetName, headers);
+        LOG.info("Method number of lines info written to file.");
+    }
+
     private static void writeInfoToFile(String projectName, String microserviceName, ArrayList<String> structureInfo, String sheetName, String[] headers) {
         String filePath = "../data/" + projectName + "/" + microserviceName + "_structure.xlsx";
         createDirectoryIfNotExists(filePath);

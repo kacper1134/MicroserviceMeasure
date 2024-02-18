@@ -157,7 +157,7 @@ class KafkaRelationBuilder extends ExprEditor {
 
         if(m.getClassName().equals("org.springframework.kafka.core.KafkaTemplate") ||
                 m.getClassName().equals("org.apache.kafka.streams.StreamsBuilder")) {
-            String filePath = manager.getFilePath(clazz.getName());
+            String filePath = manager.getPathToJavaFile(clazz.getName());
             int lineNumber = m.getLineNumber();
 
             String instruction = JavaFileReader.extractInstructionFromLine(filePath, lineNumber);

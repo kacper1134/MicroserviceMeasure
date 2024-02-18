@@ -70,6 +70,11 @@
             <artifactId>asm</artifactId>
             <version>9.6</version>
         </dependency>
+        <dependency>
+            <groupId>org.bitbucket.mstrobel</groupId>
+            <artifactId>procyon-compilertools</artifactId>
+            <version>0.6.0</version>
+        </dependency>
     </dependencies>
 
     <properties>

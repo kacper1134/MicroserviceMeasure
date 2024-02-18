@@ -14,12 +14,14 @@ public class MicroserviceClassesManager {
 
     private final HashSet<String> classNames = new HashSet<>();
 
+    private static final HashMap<String, String> javaPaths = new HashMap<>();
+
     private static final HashMap<String, String> classPaths = new HashMap<>();
 
     private static final Logger LOG = LogManager.getLogger(MicroserviceClassesManager.class);
 
     public static void clear() {
-        classPaths.clear();
+        javaPaths.clear();
     }
 
     public ArrayList<String> getClassNames() {
@@ -39,7 +41,11 @@ public class MicroserviceClassesManager {
         }
     }
 
-    public String getFilePath(String className) {
+    public String getPathToJavaFile(String className) {
+        return javaPaths.get(className);
+    }
+
+    public String getPathToClassFile(String className) {
         return classPaths.get(className);
     }
 
@@ -47,7 +53,8 @@ public class MicroserviceClassesManager {
         try {
             CtClass clazz = pool.makeClass(Files.newInputStream(Paths.get(pathToClass)));
             classNames.add(clazz.getName());
-            classPaths.put(clazz.getName(), pathToClass
+            classPaths.put(clazz.getName(), pathToClass);
+            javaPaths.put(clazz.getName(), pathToClass
                     .replace("\\target\\classes\\", "\\src\\main\\java\\")
                     .replace("\\target\\test-classes\\", "\\src\\test\\java\\")
                     .replace(".class", ".java"));

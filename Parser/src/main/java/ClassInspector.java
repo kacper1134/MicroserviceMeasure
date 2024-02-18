@@ -116,6 +116,24 @@ public class ClassInspector {
         return holder;
     }
 
+    public static String getNumberOfLines(CtClass clazz, MicroserviceClassesManager manager) {
+        String filePath = manager.getPathToClassFile(clazz.getName());
+        String classContent = ClassDecompiler.decompile(filePath);
+        String classLines =  clazz.getName() + "||" + ClassFileReader.getNumberOfLinesOfClass(classContent, clazz.getSimpleName());
+
+        StringBuilder result = new StringBuilder(classLines + "\n");
+
+        for (CtMethod method: clazz.getDeclaredMethods()) {
+            StringBuilder methodSignature = new StringBuilder(method.getName() + "(");
+            ClassInspector.getMethodSignature(methodSignature, method.getSignature());
+            int numberOfLines = ClassFileReader.getNumberOfLinesOfMethod(classContent, clazz.getSimpleName(), methodSignature.toString());
+
+            result.append(clazz.getName()).append("||").append(methodSignature).append("||").append(numberOfLines).append("\n");
+        }
+
+        return result.toString();
+    }
+
     public static void getMethodSignature(StringBuilder methodSignature, String signature) {
         String paramStr = Descriptor.toString(signature);
         paramStr = paramStr.substring(1, paramStr.length() - 1);

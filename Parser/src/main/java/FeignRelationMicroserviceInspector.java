@@ -107,7 +107,7 @@ class MicroserviceRelationBuilder extends ExprEditor {
             FeignRelation relation = FeignRelationMicroserviceInspector.relations.get(feignRelationKey);
             Endpoint endpoint = FeignRelationMicroserviceInspector.endpoints.get(relation.getOutMicroServiceName() + "." + relation.getPath() + "." + relation.getHttpMethod());
             if(endpoint != null) {
-                String info = inMicroserviceName + "||" + callerClass.getName() + "||" + callerMethodSignature + "||" + relation.getOutMicroServiceName() + "||" + endpoint.getClassName() + "||" + endpoint.getMethodSignature();
+                String info = inMicroserviceName + "||" + callerClass.getName() + "||" + relation.getOutMicroServiceName() + "||" + endpoint.getClassName();
                 if (microserviceRelationsInfo.containsKey(info)) {
                     microserviceRelationsInfo.put(info, microserviceRelationsInfo.get(info) + 1);
                 } else {

@@ -14,9 +14,27 @@ class Microservice:
         self.classes[class_obj.name] = class_obj
 
     def add_microservice_relation(self, relation: MicroserviceRelation):
-        if relation.source_class not in self.microservice_relations:
-            self.microservice_relations[relation.source_class] = []
-        self.microservice_relations[relation.source_class].append(relation)
+        if relation.target_microservice not in self.microservice_relations:
+            self.microservice_relations[relation.target_microservice] = []
+        self.microservice_relations[relation.target_microservice].append(relation)
+
+    def add_inverted_relations(self):
+        for clazz in self.classes.values():
+            for relations in clazz.method_relations.values():
+                for method_relation in relations:
+                    target_class = self.classes[method_relation.target_class]
+
+                    if method_relation.source_method not in target_class.inverted_method_relations:
+                        target_class.inverted_method_relations[method_relation.source_method] = []
+                    target_class.inverted_method_relations[method_relation.source_method].append(method_relation)
+
+            for relations in clazz.field_relations.values():
+                for field_relation in relations:
+                    target_class = self.classes[field_relation.target_class]
+
+                    if field_relation.source_method not in target_class.inverted_field_relations:
+                        target_class.inverted_field_relations[field_relation.source_method] = []
+                    target_class.inverted_field_relations[field_relation.source_method].append(field_relation)
 
     def __str__(self):
         classes_str = "\n".join([str(class_obj) for class_obj in self.classes.values()])

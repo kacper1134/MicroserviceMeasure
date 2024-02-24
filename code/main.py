@@ -1,6 +1,7 @@
 from code.data_reader.fields_data_reader import store_data_about_class_fields
 from code.data_reader.relations_data_reader import store_data_about_method_relations, store_data_about_field_relations, \
     store_data_about_microservice_relations
+from code.measures.MSM import MSM
 from code.types.project import Project
 from code.data_reader.data_reader import get_list_of_microservices_for_each_project
 from code.data_reader.methods_data_reader import store_data_about_class_method, store_data_about_interface_method
@@ -46,7 +47,8 @@ def main():
     store_data_about_microservice_relations(projects)
 
     for project in projects.values():
-        print_information_about_project(project)
+        project.add_inverted_relations()
+        MSM.compute(project)
 
 
 if __name__ == "__main__":

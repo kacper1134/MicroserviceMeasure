@@ -11,8 +11,13 @@ class Class:
         self.name = name
         self.methods: Dict[str, Method] = {}
         self.fields: Dict[str, Field] = {}
+
         self.method_relations: Dict[str, List[MethodRelation]] = {}
+        self.inverted_method_relations: Dict[str, List[MethodRelation]] = {}
+
         self.field_relations: Dict[str, List[FieldRelation]] = {}
+        self.inverted_field_relations: Dict[str, List[FieldRelation]] = {}
+
         self.is_interface = False
 
     def add_method(self, method: Method):

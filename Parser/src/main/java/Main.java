@@ -28,12 +28,14 @@ public class Main {
 
     public static void processProject(String projectName) throws IOException {
         String[] classFilePaths = ClassFinder.findClassFiles("C:\\Users\\Kacper\\Desktop\\data\\" + projectName).toArray(new String[0]);
+        ProjectClassesManager projectClassesManager = new ProjectClassesManager();
 
         for (String classFilePath : classFilePaths) {
             String microserviceName = ProjectManager.getMicroserviceNameFromFilePath(classFilePath);
 
             MicroserviceClassesManager microserviceClassesManager = ProjectManager.getMicroserviceClassesManager(microserviceName);
             microserviceClassesManager.loadClass(classFilePath);
+            projectClassesManager.loadClass(classFilePath, microserviceName);
         }
 
         StructureWriter.deleteFilesInDirectory("../data/" + projectName);
@@ -56,6 +58,8 @@ public class Main {
             HashMap<String, Integer> fieldClassRelation = new HashMap<>();
             HashMap<String, Integer> fieldInterfaceRelation = new HashMap<>();
 
+            HashMap<String, Integer> standardMicroserviceRelations = new HashMap<>();
+
             for(String className : classNames) {
                 CtClass clazz = manager.getClass(className);
                 if(Utility.isApiClass(clazz)) {
@@ -64,6 +68,7 @@ public class Main {
                     classesInfo.addAll(ClassInspector.getMethodsInfo(clazz, false));
                 }
 
+                standardMicroserviceRelations.putAll(StandardRelationMicroserviceInspector.processClass(microserviceName, clazz, projectClassesManager));
                 FeignRelationMicroserviceInspector.processClass(microserviceName, clazz);
                 KafkaRelationMicroserviceInspector.processClass(microserviceName, clazz, manager);
 
@@ -87,14 +92,18 @@ public class Main {
             StructureWriter.writeAboutClassMethodsInfo(projectName, microserviceName, classesInfo);
             StructureWriter.writeAboutInterfaceMethodsInfo(projectName, microserviceName, interfacesInfo);
             StructureWriter.writeAboutFieldsInfo(projectName, microserviceName, fieldsInfo);
+
             StructureWriter.writeAboutClassToClassRelations(projectName, microserviceName, classToClassRelation);
             StructureWriter.writeAboutClassToInterfaceRelations(projectName, microserviceName, classToInterfaceRelation);
             StructureWriter.writeAboutInterfaceToClassRelations(projectName, microserviceName, interfaceToClassRelation);
             StructureWriter.writeAboutInterfaceToInterfaceRelations(projectName, microserviceName, interfaceToInterfaceRelation);
             StructureWriter.writeAboutFieldClassRelations(projectName, microserviceName, fieldClassRelation);
             StructureWriter.writeAboutFieldInterfaceRelations(projectName, microserviceName, fieldInterfaceRelation);
+
             StructureWriter.writeAboutClassNumberOfLines(projectName, microserviceName, classNumberOfLines);
             StructureWriter.writeAboutMethodNumberOfLines(projectName, microserviceName, methodNumberOfLines);
+
+            StructureWriter.writeAboutStandardMicroserviceRelations(projectName, standardMicroserviceRelations);
 
             LOG.info("Microservice processed: " + microserviceName);
             LOG.info("\n");

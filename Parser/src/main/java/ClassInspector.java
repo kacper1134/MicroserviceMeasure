@@ -170,10 +170,7 @@ class ClassRelationBuilder extends ExprEditor {
             boolean isCalledClassApi = Utility.isApiClass(calledClass);
             String info = callerClass.getName() + "||" + callerMethodSignature + "||" + calledClass.getName() + "||" + calledMethodSignature;
 
-            boolean isRecursive = callerClass.getName().equals(calledClass.getName());
-
             if(isCalledClassApi && isCallerClassApi) {
-                if(isRecursive) return;
                 if (holder.interfaceToInterfaceRelation.containsKey(info))
                     holder.interfaceToInterfaceRelation.put(info, holder.interfaceToInterfaceRelation.get(info) + 1);
                 else

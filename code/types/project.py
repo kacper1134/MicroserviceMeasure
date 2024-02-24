@@ -11,6 +11,10 @@ class Project:
     def add_microservice(self, microservice: Microservice):
         self.microservices[microservice.name] = microservice
 
+    def add_inverted_relations(self):
+        for microservice in self.microservices.values():
+            microservice.add_inverted_relations()
+
     def __str__(self):
         microservices_str = "\n".join([str(ms) for ms in self.microservices.values()])
         return f"Project Name: {self.name}\nMicroservices:\n{microservices_str}"

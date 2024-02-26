@@ -45,7 +45,8 @@ def store_data_about_interface_method(microservices: Dict[str, List[str]], proje
 
 def process_method_data(row: pd.Series, microservice) -> None:
     class_name = row.iloc[0]
-    method_name, parameters = extract_method_signature(row.iloc[1])
+    method_signature = row.iloc[1]
+    method_name, parameters = extract_method_signature(method_signature)
     method_modifiers = row.iloc[2]
     return_type = row.iloc[3]
 
@@ -55,7 +56,7 @@ def process_method_data(row: pd.Series, microservice) -> None:
     else:
         class_obj = microservice.classes[class_name]
 
-    method = Method(method_name, parameters, method_modifiers, return_type)
+    method = Method(method_signature, method_name, parameters, method_modifiers, return_type)
     class_obj.add_method(method)
 
 

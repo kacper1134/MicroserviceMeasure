@@ -1,7 +1,4 @@
-import javassist.CtClass;
-import javassist.CtField;
-import javassist.CtMethod;
-import javassist.NotFoundException;
+import javassist.*;
 import javassist.bytecode.Descriptor;
 import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
@@ -126,6 +123,14 @@ public class ClassInspector {
         for (CtMethod method: clazz.getDeclaredMethods()) {
             StringBuilder methodSignature = new StringBuilder(method.getName() + "(");
             ClassInspector.getMethodSignature(methodSignature, method.getSignature());
+            int numberOfLines = ClassFileReader.getNumberOfLinesOfMethod(classContent, clazz.getSimpleName(), methodSignature.toString());
+
+            result.append(clazz.getName()).append("||").append(methodSignature).append("||").append(numberOfLines).append("\n");
+        }
+
+        for (CtConstructor constructor: clazz.getDeclaredConstructors()) {
+            StringBuilder methodSignature = new StringBuilder(constructor.getName() + "(");
+            ClassInspector.getMethodSignature(methodSignature, constructor.getSignature());
             int numberOfLines = ClassFileReader.getNumberOfLinesOfMethod(classContent, clazz.getSimpleName(), methodSignature.toString());
 
             result.append(clazz.getName()).append("||").append(methodSignature).append("||").append(numberOfLines).append("\n");

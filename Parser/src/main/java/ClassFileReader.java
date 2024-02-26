@@ -8,16 +8,30 @@ import java.util.stream.Collectors;
 public class ClassFileReader {
     public static int getNumberOfLinesOfClass(String classContent, String className) {
         className = extractClassName(className);
-        classContent = extractClassContent(getClassType(classContent, className), classContent, className);
+        classContent = extractClassContent(classContent, className);
+        classContent = removeEmptyLinesAndAnnotations(classContent);
+        classContent = removeAngleBrackets(classContent);
+        classContent = deleteStaticBlocks(classContent);
+        classContent = removeInnerClasses(classContent);
+        classContent = removeDefaultMethod(classContent);
         classContent = removeEmptyLinesAndAnnotations(classContent);
 
         return countLines(classContent);
     }
 
     public static int getNumberOfLinesOfMethod(String classContent, String className, String methodSignature) {
-        classContent = removeEmptyLinesAndAnnotations(classContent);
         className = extractClassName(className);
-        classContent = extractClassContent(getClassType(classContent, className), classContent, className);
+        classContent = extractClassContent(classContent, className);
+        classContent = removeEmptyLinesAndAnnotations(classContent);
+        classContent = removeAngleBrackets(classContent);
+        classContent = deleteStaticBlocks(classContent);
+        classContent = removeInnerClasses(classContent);
+        classContent = removeDefaultMethod(classContent);
+        classContent = removeEmptyLinesAndAnnotations(classContent);
+
+        if(isLambdaMethod(methodSignature)) {
+            return 0;
+        }
 
         String methodContent = extractMethodContent(classContent, methodSignature);
 
@@ -32,26 +46,27 @@ public class ClassFileReader {
         return className;
     }
 
-    private static String getClassType(String classContent, String className) {
-        if (classContent.contains("class " + className)) {
-            return "class";
-        } else if (classContent.contains("enum " + className)) {
-            return "enum";
-        } else if (classContent.contains("interface " + className)) {
-            return "interface";
-        } else {
-            return "";
-        }
-    }
+    private static String extractClassContent(String classContent, String className) {
+        String regex = "\\b(class|interface|enum|record)\\s+" + className;
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(classContent);
 
-    private static String extractClassContent(String type, String classContent, String className) {
-        int startIndex = classContent.indexOf(type + " " + className);
+        int startIndex = -1;
+
+        if (matcher.find()) {
+            startIndex = matcher.start();
+        }
 
         if (startIndex == -1) {
             return "";
         }
 
-        int endIndex = startIndex;
+        int openingBraceIndex = classContent.indexOf("{", startIndex);
+        if (openingBraceIndex == -1) {
+            return "";
+        }
+
+        int endIndex = openingBraceIndex;
         int braceCount = 0;
         while (endIndex < classContent.length()) {
             char c = classContent.charAt(endIndex);
@@ -70,32 +85,25 @@ public class ClassFileReader {
             return "";
         }
 
-        return classContent.substring(startIndex, endIndex + 1);
+        return classContent.substring(openingBraceIndex + 1, endIndex).trim();
     }
 
     private static String removeEmptyLinesAndAnnotations(String classContent) {
         String classContentStr = removeAnnotations(classContent);
-        classContentStr = classContentStr.replaceAll("(?m)^[ \t]*\r?\n", "");
+        classContentStr = classContentStr.replaceAll("(?m)^[ \t]*\r?\n", "").replaceAll("\\s+$", "");
         return classContentStr;
     }
 
     private static String extractMethodContent(String classContent, String methodSignature) {
-        boolean isLambdaMethod = isLambdaMethod(methodSignature);
-
         String methodName = methodSignature.substring(0, methodSignature.indexOf('('));
 
-        if(isLambdaMethod) {
+        if (methodName.contains("$")) {
             methodName = methodName.substring(methodName.indexOf('$') + 1);
-            methodName = methodName.substring(0, methodName.indexOf('$'));
         }
 
         List<String> methods = extractMethods(classContent, methodName);
 
         for (String method : methods) {
-            if(isLambdaMethod) {
-                return method;
-            }
-
             ArrayList<String> methodParameters = extractParametersTypes(method, methodName);
             ArrayList<String> expectedParameters = Arrays
                     .stream(methodSignature.substring(methodSignature.indexOf("(") + 1, methodSignature.indexOf(")"))
@@ -115,13 +123,42 @@ public class ClassFileReader {
     }
 
     private static List<String> extractMethods(String classContent, String methodName) {
-        List<String> methods = new ArrayList<>();
-        Pattern pattern = Pattern.compile("(?s)" + methodName + "\\([^\\)]*\\)\\s*\\{([^\\}]*)\\}");
-        Matcher matcher = pattern.matcher(classContent);
-        while (matcher.find()) {
-            methods.add(matcher.group(0));
+        List<String> extractedMethods = new ArrayList<>();
+        Pattern methodPattern = Pattern.compile("(public|protected|private|static|\\s) +[\\w\\<\\>\\[\\]]*\\s*" + methodName + "\\s*\\([^\\)]*\\)\\s*(throws\\s+[\\w\\.\\s,]+)?\\s*\\{?");
+        Pattern interfacePattern = Pattern.compile("([\\w\\<\\>\\[\\]]+\\s+" + methodName + "\\s*\\([^\\)]*\\);)");
+        String[] lines = classContent.split("\n");
+
+        boolean insideMethod = false;
+        int openBracesCount = 0;
+        StringBuilder currentMethod = new StringBuilder();
+
+        for (String line : lines) {
+            Matcher methodMatcher = methodPattern.matcher(line);
+            if (methodMatcher.find()) {
+                insideMethod = true;
+                openBracesCount = 1;
+                currentMethod.append(line.trim()).append("\n");
+            } else if (insideMethod) {
+
+                currentMethod.append(line.trim()).append("\n");
+
+                openBracesCount += line.chars().filter(ch -> ch == '{').count();
+                openBracesCount -= line.chars().filter(ch -> ch == '}').count();
+
+                if (openBracesCount <= 0) {
+                    extractedMethods.add(currentMethod.toString());
+                    currentMethod.setLength(0);
+                    insideMethod = false;
+                }
+            }
+
+            Matcher interfaceMatcher = interfacePattern.matcher(line);
+            if (interfaceMatcher.find()) {
+                extractedMethods.add(line.trim());
+            }
         }
-        return methods;
+
+        return extractedMethods;
     }
 
     private static ArrayList<String> extractParametersTypes(String method, String methodName) {
@@ -178,7 +215,7 @@ public class ClassFileReader {
             }
             else if (c == ')') {
                 openCount--;
-                if(openCount == annotationOpenCount) {
+                if(openCount == annotationOpenCount && isAnnotation) {
                     isAnnotation = false;
                     skipNextCharacter = true;
                 }
@@ -186,6 +223,61 @@ public class ClassFileReader {
         }
 
         return result.toString();
+    }
+
+    private static String removeAngleBrackets(String input) {
+        String regex = "<[^>]*>";
+
+        Pattern pattern = Pattern.compile(regex);
+
+        Matcher matcher = pattern.matcher(input);
+
+        return matcher.replaceAll("");
+    }
+
+    private static String removeInnerClasses(String classContent) {
+        Pattern pattern = Pattern.compile("(?:(?:public|private|sealed|static|abstract|final)\\s+)*\\s*(?:class|enum|interface|record)\\s+\\w+\\b");
+        Matcher matcher = pattern.matcher(classContent);
+
+        while (matcher.find()) {
+            int indexOfOfStartOfClass = classContent.indexOf(matcher.group().trim());
+
+            int indexOfEndOfClass = indexOfOfStartOfClass;
+
+            int braceCount = 0;
+
+            while (indexOfEndOfClass < classContent.length()) {
+                char c = classContent.charAt(indexOfEndOfClass);
+                if (c == '{') {
+                    braceCount++;
+                } else if (c == '}') {
+                    braceCount--;
+                    if (braceCount == 0) {
+                        break;
+                    }
+                }
+                indexOfEndOfClass++;
+            }
+
+            if (indexOfEndOfClass == classContent.length()) {
+                classContent = classContent.substring(0, indexOfOfStartOfClass);
+            } else {
+                classContent = classContent.substring(0, indexOfOfStartOfClass) + classContent.substring(indexOfEndOfClass + 1);
+            }
+
+            pattern = Pattern.compile("(?:(?:public|private|sealed|static|abstract|final)\\s+)*\\s*(?:class|enum|interface|record)\\s+\\w+\\b");
+            matcher = pattern.matcher(classContent);
+        }
+
+        return classContent;
+    }
+
+    private static String removeDefaultMethod(String input) {
+        String regex = "\\bdefault\\b.*?;";
+        String result = input.replaceAll(regex, ";");
+        result = result.replaceAll("\\)\\s*;", ");");
+
+        return result;
     }
 
     private static boolean areParametersTypesEqual(ArrayList<String> methodParameters, ArrayList<String> expectedParameters) {
@@ -197,6 +289,9 @@ public class ClassFileReader {
             String methodParam = methodParameters.get(i);
             methodParam = methodParam.replaceAll("<.*>", "");
             String expectedParam = expectedParameters.get(i);
+
+            methodParam = methodParam.trim();
+            expectedParam = expectedParam.trim();
 
             if (isClassNameWithPackage(methodParam) && !methodParam.equals(expectedParam)) {
                 return false;
@@ -225,7 +320,44 @@ public class ClassFileReader {
         return method.contains("lambda$");
     }
 
+    private static String deleteStaticBlocks(String classContent) {
+        return classContent.replaceAll("(?s)static\\s*\\{.*?\\}", "");
+    }
+
     private static int countLines(String text) {
+        if(text.isEmpty()) return 0;
         return text.split("\\r?\\n").length;
+    }
+
+    public static void main(String [] args) {
+        String classContent = """
+                package com.macro.mall.demo.validator;
+                                
+                import java.lang.annotation.Documented;
+                import java.lang.annotation.ElementType;
+                import java.lang.annotation.Retention;
+                import java.lang.annotation.RetentionPolicy;
+                import java.lang.annotation.Target;
+                import javax.validation.Constraint;
+                import javax.validation.Payload;
+                                
+                @Documented
+                @Retention(RetentionPolicy.RUNTIME)
+                @Target({ElementType.FIELD, ElementType.PARAMETER})
+                @Constraint(
+                    validatedBy = {FlagValidatorClass.class}
+                )
+                public @interface FlagValidator {
+                    String[] value() default {};
+                                
+                    String message() default "flag is not found";
+                                
+                    Class<?>[] groups() default {};
+                                
+                    Class<? extends Payload>[] payload() default {};
+                }
+                """;
+        System.out.println(removeDefaultMethod(classContent));
+        System.out.println(extractMethods(removeDefaultMethod(classContent), "value"));
     }
 }

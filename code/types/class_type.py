@@ -11,6 +11,7 @@ class Class:
         self.name = name
         self.methods: Dict[str, Method] = {}
         self.fields: Dict[str, Field] = {}
+        self.number_of_lines = 0
 
         self.method_relations: Dict[str, List[MethodRelation]] = {}
         self.inverted_method_relations: Dict[str, List[MethodRelation]] = {}
@@ -21,7 +22,7 @@ class Class:
         self.is_interface = False
 
     def add_method(self, method: Method):
-        self.methods[method.name] = method
+        self.methods[method.signature] = method
 
     def add_field(self, field: Field):
         self.fields[field.name] = field

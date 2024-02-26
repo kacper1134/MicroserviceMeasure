@@ -1,6 +1,13 @@
+import inspectors.*;
 import javassist.CtClass;
+import managers.MicroserviceClassesManager;
+import managers.ProjectClassesManager;
+import managers.ProjectManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import utility.ClassFinder;
+import utility.StructureWriter;
+import utility.Utility;
 
 import java.io.IOException;
 import java.util.*;

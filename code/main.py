@@ -2,7 +2,6 @@ from code.data_reader.fields_data_reader import store_data_about_class_fields
 from code.data_reader.relations_data_reader import store_data_about_method_relations, store_data_about_field_relations, \
     store_data_about_microservice_relations
 from code.data_reader.size_data_reader import store_data_about_classes_size, store_data_about_methods_size
-from code.measures.MSM import MSM
 from code.types.project import Project
 from code.data_reader.data_reader import get_list_of_microservices_for_each_project
 from code.data_reader.methods_data_reader import store_data_about_class_method, store_data_about_interface_method
@@ -37,7 +36,7 @@ def print_information_about_project(project: Project) -> None:
     print(f"Number of method relations: {number_of_method_relations}")
     print(f"Number of field relations: {number_of_field_relations}")
     print(f"Number of microservice relations: {number_of_microservice_relations}")
-    print(f"Total size of methods: {total_size_of_methods + number_of_fields}")
+    print(f"Total size of methods and fields: {total_size_of_methods + number_of_fields}")
     print(f"Total size of project: {total_size_of_project}")
     print()
 
@@ -55,16 +54,11 @@ def main():
     store_data_about_methods_size(microservices, projects)
 
     for project in projects.values():
-        print(project.name)
-        print("*" * 100)
         for microservice in project.microservices.values():
-            print(microservice.name)
-            print(microservice.list_all_incorrect_classes())
-            print()
-        print("*" * 100)
+            microservice.fix_incorrect_classes()
+
+    for project in projects.values():
         print_information_about_project(project)
-        #project.add_inverted_relations()
-        #MSM.compute(project)
 
 
 if __name__ == "__main__":

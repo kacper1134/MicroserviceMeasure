@@ -36,15 +36,11 @@ class Microservice:
                         target_class.inverted_field_relations[field_relation.source_method] = []
                     target_class.inverted_field_relations[field_relation.source_method].append(field_relation)
 
-    def list_all_incorrect_classes(self):
-        incorrect_classes = []
+    def fix_incorrect_classes(self):
         for class_obj in self.classes.values():
             total_number_of_lines = sum([method.number_of_lines for method in class_obj.methods.values()]) + len(class_obj.fields)
-
             if total_number_of_lines != class_obj.number_of_lines:
-                incorrect_classes.append(class_obj.name + " " + str(total_number_of_lines) + " " + str(class_obj.number_of_lines))
-
-        return incorrect_classes
+                class_obj.number_of_lines = total_number_of_lines
 
     def __str__(self):
         classes_str = "\n".join([str(class_obj) for class_obj in self.classes.values()])

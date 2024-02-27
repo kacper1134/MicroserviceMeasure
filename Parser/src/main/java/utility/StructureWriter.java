@@ -142,7 +142,7 @@ public class StructureWriter {
                 .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
 
         String sheetName = "standardRelations";
-        String[] headers = {"Source Service Name", "Source Class Name", "Target Service Name", "Target Class Name", "Weight"};
+        String[] headers = {"Source Service Name", "Source Class Name", "Target Service Name", "Target Class Name", "Caller Method Signature", "Called Method Signature", "Weight"};
         writeInfoToFile(projectName, projectName, structureInfo, sheetName, headers);
         LOG.info("Microservice standard relations info written to file.");
     }
@@ -153,7 +153,7 @@ public class StructureWriter {
                 .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
 
         String sheetName = "feignRelations";
-        String[] headers = {"Source Service Name", "Source Class Name", "Target Service Name", "Target Interface Name", "Weight"};
+        String[] headers = {"Source Service Name", "Source Class Name", "Target Service Name", "Target Interface Name", "Caller Method Signature", "Called Method Signature", "Weight"};
         writeInfoToFile(projectName, projectName, structureInfo, sheetName, headers);
         LOG.info("Microservice feign relations info written to file.");
     }
@@ -164,7 +164,7 @@ public class StructureWriter {
                 .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
 
         String sheetName = "kafkaRelations";
-        String[] headers = {"Source Service Name", "Source Class Name", "Target Service Name", "Target Class Name", "Weight"};
+        String[] headers = {"Source Service Name", "Source Class Name", "Target Service Name", "Target Class Name", "Caller Method Signature", "Called Method Signature", "Weight"};
         writeInfoToFile(projectName, projectName, structureInfo, sheetName, headers);
         LOG.info("Microservice kafka relations info written to file.");
     }

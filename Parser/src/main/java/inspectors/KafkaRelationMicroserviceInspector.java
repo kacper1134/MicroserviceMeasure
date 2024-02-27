@@ -44,7 +44,7 @@ public class KafkaRelationMicroserviceInspector {
 
                         String info = producer.getMicroserviceName() + "||" + producer.getClassName() + "||" +
                                 consumer.getMicroserviceName() + "||" +
-                                consumer.getClassName();
+                                consumer.getClassName() + "||" + producer.getMethodSignature() + "||" + consumer.getMethodSignature();
                         if(relations.containsKey(info)) {
                             relations.put(info, relations.get(info) + 1);
                         } else {

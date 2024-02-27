@@ -42,18 +42,23 @@ class StandardMicroserviceRelationBuilder extends ExprEditor {
 
     @Override
     public void edit(MethodCall m) {
-        readRelation(m.getClassName());
+        readRelation(m.getClassName(), m.getMethodName(), m.getSignature());
     }
 
     public void edit(ConstructorCall c) {
-        readRelation(c.getClassName());
+        readRelation(c.getClassName(), c.getMethodName(), c.getSignature());
     }
 
-    public void readRelation(String className) {
+    public void readRelation(String className, String methodName, String methodSignature) {
+        StringBuilder calledMethodSignature = new StringBuilder(methodName + "(");
+        StringBuilder callerMethodSignature = new StringBuilder(callerMethod.getName() + "(");
+        ClassInspector.getMethodSignature(calledMethodSignature, methodSignature);
+        ClassInspector.getMethodSignature(callerMethodSignature, callerMethod.getSignature());
+
         String outMicroserviceName = projectClassesManager.getClassMicroserviceName(className);
 
         if(outMicroserviceName != null && !inMicroserviceName.equals(outMicroserviceName)) {
-            String info = inMicroserviceName + "||" + callerClass.getName() + "||" + outMicroserviceName + "||" + className;
+            String info = inMicroserviceName + "||" + callerClass.getName() + "||" + outMicroserviceName + "||" + className + "||" + callerMethodSignature + "||" + calledMethodSignature;
             if (!relations.containsKey(info)) {
                 relations.put(info, 1);
             } else {

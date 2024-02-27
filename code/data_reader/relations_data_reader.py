@@ -6,6 +6,7 @@ import pandas as pd
 from code.data_reader.data_reader import get_file_path, get_file_path_for_microservice_structure
 from code.data_reader.methods_data_reader import extract_method_signature
 from code.types.field_relation import FieldRelation
+from code.types.full_microservice_relation import FullMicroserviceRelation
 from code.types.method_relation import MethodRelation
 from code.types.microservice import Microservice
 from code.types.microservice_relation import MicroserviceRelation
@@ -78,7 +79,11 @@ def process_microservice_relation_data(row: pd.Series, microservice: Microservic
     source_class = row.iloc[1]
     target_microservice = row.iloc[2]
     target_class = row.iloc[3]
+    caller_method = row.iloc[4]
+    called_method = row.iloc[5]
 
     relation = MicroserviceRelation(source_microservice, source_class, target_microservice, target_class)
+    full_relation = FullMicroserviceRelation(source_microservice, source_class, target_microservice, target_class, caller_method, called_method)
 
     microservice.add_microservice_relation(relation)
+    microservice.add_full_microservice_relation(full_relation)

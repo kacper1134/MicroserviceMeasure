@@ -1,6 +1,7 @@
-from typing import Dict, List
+from typing import Dict, List, Set
 
 from code.types.class_type import Class
+from code.types.full_microservice_relation import FullMicroserviceRelation
 from code.types.microservice_relation import MicroserviceRelation
 
 
@@ -8,15 +9,25 @@ class Microservice:
     def __init__(self, name: str):
         self.name = name
         self.classes: Dict[str, Class] = {}
-        self.microservice_relations: Dict[str, List[MicroserviceRelation]] = {}
+        self.is_common_service = False
+        self.microservice_relations: Dict[str, Set[MicroserviceRelation]] = {}
+        self.full_microservice_relations: Dict[str, Set[FullMicroserviceRelation]] = {}
 
     def add_class(self, class_obj: Class):
         self.classes[class_obj.name] = class_obj
 
+    def add_classes(self, classes: Dict[str, Class]):
+        self.classes.update(classes)
+
     def add_microservice_relation(self, relation: MicroserviceRelation):
         if relation.target_microservice not in self.microservice_relations:
-            self.microservice_relations[relation.target_microservice] = []
-        self.microservice_relations[relation.target_microservice].append(relation)
+            self.microservice_relations[relation.target_microservice] = set()
+        self.microservice_relations[relation.target_microservice].add(relation)
+
+    def add_full_microservice_relation(self, relation: FullMicroserviceRelation):
+        if relation.target_microservice not in self.full_microservice_relations:
+            self.full_microservice_relations[relation.target_microservice] = set()
+        self.full_microservice_relations[relation.target_microservice].add(relation)
 
     def add_inverted_relations(self):
         for clazz in self.classes.values():

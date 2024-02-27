@@ -15,6 +15,19 @@ def get_list_of_microservices_for_each_project(root_dir='../data'):
     return microservices
 
 
+def get_list_of_common_microservices(project_name, root_dir='../data_common'):
+    microservices = set()
+
+    common_microservices = os.path.join(root_dir, project_name + "_common" + ".txt")
+
+    if os.path.isfile(common_microservices):
+        with open(common_microservices, 'r') as file:
+            services = file.read().strip().split(',')
+            microservices.update(services)
+
+    return list(microservices)
+
+
 def get_file_path(root_dir: str, project_name: str, service: str) -> str:
     return f"{root_dir}/{project_name}/{service}_structure.xlsx"
 

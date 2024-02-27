@@ -3,6 +3,7 @@ package inspectors;
 import fileReaders.ClassFileReader;
 import javassist.*;
 import javassist.bytecode.Descriptor;
+import javassist.expr.ConstructorCall;
 import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
 import javassist.expr.MethodCall;
@@ -19,6 +20,8 @@ public class ClassInspector {
         if(!isApiClass)
             methods.addAll(List.of(clazz.getMethods()));
         ArrayList<String> classMethodsInfo = new ArrayList<>();
+
+        methods.addAll(Utility.transformCtConstructorsToCtMethods(clazz));
 
         for (CtMethod method : methods) {
             String methodName = method.getName();
@@ -171,12 +174,21 @@ class ClassRelationBuilder extends ExprEditor {
 
     @Override
     public void edit(MethodCall m) {
-        StringBuilder calledMethodSignature = new StringBuilder(m.getMethodName() + "(");
+        readRelation(m.getMethodName(), m.getSignature(), m.getClassName());
+    }
+
+    @Override
+    public void edit(ConstructorCall c) {
+        readRelation(c.getMethodName(), c.getSignature(), c.getClassName());
+    }
+
+    public void readRelation(String methodName, String signature, String className) {
+        StringBuilder calledMethodSignature = new StringBuilder(methodName + "(");
         StringBuilder callerMethodSignature = new StringBuilder(callerMethod.getName() + "(");
-        ClassInspector.getMethodSignature(calledMethodSignature, m.getSignature());
+        ClassInspector.getMethodSignature(calledMethodSignature, signature);
         ClassInspector.getMethodSignature(callerMethodSignature, callerMethod.getSignature());
-        if (manager.isClassDeclared(m.getClassName())) {
-            CtClass calledClass = manager.getClass(m.getClassName());
+        if (manager.isClassDeclared(className)) {
+            CtClass calledClass = manager.getClass(className);
             boolean isCallerClassApi = Utility.isApiClass(callerClass);
             boolean isCalledClassApi = Utility.isApiClass(calledClass);
             String info = callerClass.getName() + "||" + callerMethodSignature + "||" + calledClass.getName() + "||" + calledMethodSignature;

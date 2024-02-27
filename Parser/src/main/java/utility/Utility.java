@@ -1,6 +1,7 @@
 package utility;
 
 import fileReaders.JavaFileReader;
+import javassist.CannotCompileException;
 import javassist.CtMethod;
 import lombok.SneakyThrows;
 import managers.MicroserviceClassesManager;
@@ -14,8 +15,10 @@ import javassist.CtClass;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class Utility {
     public static boolean isApiClass(CtClass ctClass) {
@@ -143,6 +146,19 @@ public class Utility {
             return new ArrayList<>(Arrays.stream(kafkaListener.topics()).toList());
         }
         return new ArrayList<>();
+    }
+
+    @SneakyThrows
+    public static Set<CtMethod> transformCtConstructorsToCtMethods(CtClass clazz) {
+        return Arrays.stream(clazz.getDeclaredConstructors()).map(c -> {
+            try {
+                CtMethod method = CtMethod.make(c.getMethodInfo(), clazz);
+                method.setName(c.getName());
+                return method;
+            } catch (CannotCompileException e) {
+                throw new RuntimeException(e);
+            }
+        }).collect(Collectors.toSet());
     }
 
     public static String extractKafkaTopicFromKafkaInstruction(String filePath, String instruction, MicroserviceClassesManager manager, String fullCurrentClassName) {

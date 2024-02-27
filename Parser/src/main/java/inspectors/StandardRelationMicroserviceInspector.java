@@ -2,6 +2,7 @@ package inspectors;
 
 import javassist.CtClass;
 import javassist.CtMethod;
+import javassist.expr.ConstructorCall;
 import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
 import lombok.AllArgsConstructor;
@@ -41,15 +42,18 @@ class StandardMicroserviceRelationBuilder extends ExprEditor {
 
     @Override
     public void edit(MethodCall m) {
-        StringBuilder calledMethodSignature = new StringBuilder(m.getMethodName() + "(");
-        StringBuilder callerMethodSignature = new StringBuilder(callerMethod.getName() + "(");
-        ClassInspector.getMethodSignature(calledMethodSignature, m.getSignature());
-        ClassInspector.getMethodSignature(callerMethodSignature, callerMethod.getSignature());
+        readRelation(m.getClassName());
+    }
 
-        String outMicroserviceName = projectClassesManager.getClassMicroserviceName(m.getClassName());
+    public void edit(ConstructorCall c) {
+        readRelation(c.getClassName());
+    }
+
+    public void readRelation(String className) {
+        String outMicroserviceName = projectClassesManager.getClassMicroserviceName(className);
 
         if(outMicroserviceName != null && !inMicroserviceName.equals(outMicroserviceName)) {
-            String info = inMicroserviceName + "||" + callerClass.getName() + "||" + outMicroserviceName + "||" + m.getClassName();
+            String info = inMicroserviceName + "||" + callerClass.getName() + "||" + outMicroserviceName + "||" + className;
             if (!relations.containsKey(info)) {
                 relations.put(info, 1);
             } else {

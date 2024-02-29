@@ -1,4 +1,4 @@
-from typing import Dict, List, Set
+from typing import Dict, Set
 
 from code.types.class_type import Class
 from code.types.full_microservice_relation import FullMicroserviceRelation
@@ -35,9 +35,9 @@ class Microservice:
                 for method_relation in relations:
                     target_class = self.classes[method_relation.target_class]
 
-                    if method_relation.source_method not in target_class.inverted_method_relations:
-                        target_class.inverted_method_relations[method_relation.source_method] = []
-                    target_class.inverted_method_relations[method_relation.source_method].append(method_relation)
+                    if method_relation.source_method_signature not in target_class.inverted_method_relations:
+                        target_class.inverted_method_relations[method_relation.source_method_signature] = []
+                    target_class.inverted_method_relations[method_relation.source_method_signature].append(method_relation)
 
             for relations in clazz.field_relations.values():
                 for field_relation in relations:

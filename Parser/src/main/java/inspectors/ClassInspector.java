@@ -17,8 +17,7 @@ import java.util.*;
 public class ClassInspector {
     public static ArrayList<String> getMethodsInfo(CtClass clazz, boolean isApiClass) {
         Set<CtMethod> methods = new HashSet<>(List.of(clazz.getDeclaredMethods()));
-        if(!isApiClass)
-            methods.addAll(List.of(clazz.getMethods()));
+        methods.addAll(List.of(clazz.getMethods()));
         ArrayList<String> classMethodsInfo = new ArrayList<>();
 
         methods.addAll(Utility.transformCtConstructorsToCtMethods(clazz));

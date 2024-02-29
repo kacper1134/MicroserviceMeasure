@@ -54,13 +54,13 @@ def store_data_about_microservice_relations(projects: Dict[str, Project],
 
 def process_method_relation_data(row: pd.Series, microservice: Microservice) -> None:
     source_class = row.iloc[0]
-    source_method, _ = extract_method_signature(row.iloc[1])
+    source_method_signature = row.iloc[1]
     target_class = row.iloc[2]
-    target_method, _ = extract_method_signature(row.iloc[3])
+    target_method_signature = row.iloc[3]
 
-    relation = MethodRelation(source_class, source_method, target_class, target_method)
+    relation = MethodRelation(source_class, source_method_signature, target_class, target_method_signature)
 
-    microservice.classes[source_class].add_method_relation(relation)
+    microservice.classes[source_class].add_method_relation(relation, microservice)
 
 
 def process_field_relation_data(row: pd.Series, microservice: Microservice) -> None:

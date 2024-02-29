@@ -20,7 +20,9 @@ class Project:
         for common_microservice in common_microservices:
             for microservice in self.microservices.values():
                 if microservice.name != common_microservice:
-                    microservice.add_classes(self.microservices[common_microservice].classes)
+                    for clazz in self.microservices[common_microservice].classes.values():
+                        clazz.is_class_from_common_package = True
+                        microservice.add_class(clazz)
 
     def delete_microservice_relations_to_common(self):
         for microservice in self.microservices.values():

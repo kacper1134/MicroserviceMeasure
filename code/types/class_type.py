@@ -1,5 +1,6 @@
 from typing import Dict, List
 
+from code.types.access_modifier import AccessModifier
 from code.types.field import Field
 from code.types.field_relation import FieldRelation
 from code.types.method import Method
@@ -20,6 +21,7 @@ class Class:
         self.inverted_field_relations: Dict[str, List[FieldRelation]] = {}
 
         self.is_interface = False
+        self.is_class_from_common_package = False
 
     def add_method(self, method: Method):
         self.methods[method.signature] = method
@@ -27,10 +29,20 @@ class Class:
     def add_field(self, field: Field):
         self.fields[field.name] = field
 
-    def add_method_relation(self, method_relation: MethodRelation):
-        if method_relation.source_method not in self.method_relations:
-            self.method_relations[method_relation.source_method] = []
-        self.method_relations[method_relation.source_method].append(method_relation)
+    def add_method_relation(self, method_relation: MethodRelation, microservice=None):
+        if method_relation.source_method_signature not in self.method_relations:
+            self.method_relations[method_relation.source_method_signature] = []
+        self.method_relations[method_relation.source_method_signature].append(method_relation)
+
+        if microservice is not None:
+            self.add_missing_method(method_relation.source_method_signature, microservice.classes[method_relation.source_class])
+            self.add_missing_method(method_relation.target_method_signature, microservice.classes[method_relation.target_class])
+
+    def add_missing_method(self, method_signature: str, clazz):
+        if method_signature not in self.methods.keys():
+            method = Method(method_signature, "", [], AccessModifier.PUBLIC, "")
+            method.number_of_lines = 1
+            clazz.methods[method_signature] = method
 
     def add_field_relation(self, field_relation: FieldRelation):
         if field_relation.source_method not in self.field_relations:

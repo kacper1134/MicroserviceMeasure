@@ -78,6 +78,16 @@ def main():
     fix_incorrect_classes(projects)
     store_data_about_common_microservices(projects)
 
+    for project in projects.values():
+        print("Project: ", project.name)
+
+        measure_values = MSM.compute(project, 0.9)
+
+        for measure in measure_values:
+            microservices = measure.split("->")
+            print(f"Value of measure between {microservices[0]} and {microservices[1]}: {measure_values[measure]}")
+        print()
+
 
 if __name__ == "__main__":
     main()

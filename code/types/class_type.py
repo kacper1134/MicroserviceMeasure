@@ -41,7 +41,7 @@ class Class:
     def add_missing_method(self, method_signature: str, clazz):
         if method_signature not in self.methods.keys():
             method = Method(method_signature, "", [], AccessModifier.PUBLIC, "")
-            method.number_of_lines = 1
+            method.number_of_lines = 0
             clazz.methods[method_signature] = method
 
     def add_field_relation(self, field_relation: FieldRelation):

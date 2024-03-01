@@ -28,7 +28,7 @@ public class ClassFileReader {
 
         classContent = ClassTransformer.removeUnusedParts(className, classContent);
         if(isLambdaMethod(methodSignature)) {
-            return 1;
+            return 0;
         }
 
         String methodContent = extractMethodContent(classContent, methodSignature, isEnum);
@@ -243,7 +243,7 @@ public class ClassFileReader {
     }
 
     private static int countLines(String text) {
-        if(text.isEmpty()) return 1;
+        if(text.isEmpty()) return 0;
         return text.split("\\r?\\n").length;
     }
 }

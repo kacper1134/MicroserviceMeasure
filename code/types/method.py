@@ -11,7 +11,7 @@ class Method:
         self.parameters = parameters
         self.modifier = modifier
         self.return_type = return_type
-        self.number_of_lines = 1
+        self.number_of_lines = 0
 
     def __str__(self):
         return f"Method Name: {self.name}\n" \

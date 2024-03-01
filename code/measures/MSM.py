@@ -34,11 +34,12 @@ class MSM:
 
                 for relation in MSM.__get_full_relations_between_microservices(microserviceA, microserviceB):
                     if relation.source_class + "||" + relation.target_class not in caller_microserviceMethods:
-                        caller_microserviceMethods[relation.source_class + "||" + relation.target_class] = []
-                        called_microserviceMethods[relation.source_class + "||" + relation.target_class] = []
 
-                    caller_microserviceMethods[relation.source_class + "||" + relation.target_class].append(relation.caller_method)
-                    called_microserviceMethods[relation.source_class + "||" + relation.target_class].append(relation.called_method)
+                        caller_microserviceMethods[relation.source_class + "||" + relation.target_class] = set()
+                        called_microserviceMethods[relation.source_class + "||" + relation.target_class] = set()
+
+                    caller_microserviceMethods[relation.source_class + "||" + relation.target_class].add(relation.caller_method)
+                    called_microserviceMethods[relation.source_class + "||" + relation.target_class].add(relation.called_method)
 
                 measure_value = 0
 
@@ -54,7 +55,7 @@ class MSM:
                     measure_value += (I_value + D_value) / 2
 
                 measure_value = relations_classes_ratio * measure_value
-                measure_values[microserviceA.name + "->" + microserviceB.name] = measure_value
+                measure_values[microserviceA.name + "->" + microserviceB.name] = measure_value / len(relations)
         return measure_values
 
     @staticmethod
@@ -103,9 +104,13 @@ class MSM:
         used_number_of_lines = 0
         for depth_zero_method in depth_zero_methods:
             method = clazz.methods.get(depth_zero_method)
-            if method is None:
+            if method is None or method in MSM.inner_called_methods:
                 continue
-            used_number_of_lines = method.number_of_lines
+            used_number_of_lines += method.number_of_lines
+            MSM.inner_called_methods.add(method)
+            used_number_of_lines += MSM.__visit_dependencies_of_called_method(clazz, method)
+        MSM.inner_called_methods.clear()
+        used_number_of_lines += len(clazz.fields)
 
         return {"parameters_values": [1], "calculated_values": [used_number_of_lines / clazz.number_of_lines]}
 
@@ -122,7 +127,7 @@ class MSM:
 
                 result["parameters_values"].append(math.pow(alpha, depth + 1))
                 result["calculated_values"].append(math.pow(alpha, depth + 1) * used_lines_of_code
-                                                   / microservice.classes.get(relation.target_class).number_of_lines)
+                                                   / max(microservice.classes.get(relation.target_class).number_of_lines, 1))
         return result
 
     @staticmethod

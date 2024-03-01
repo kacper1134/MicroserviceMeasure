@@ -23,6 +23,8 @@ def get_list_of_common_microservices(project_name, root_dir='../data_common'):
     if os.path.isfile(common_microservices):
         with open(common_microservices, 'r') as file:
             services = file.read().strip().split(',')
+            if len(services) == 1 and services[0] == '':
+                services = []
             microservices.update(services)
 
     return list(microservices)

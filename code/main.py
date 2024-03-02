@@ -79,13 +79,30 @@ def main():
     store_data_about_common_microservices(projects)
 
     for project in projects.values():
+        print("*" * 80)
         print("Project: ", project.name)
+        efferent = MSM.compute_single(project, 0.9, False)
+        afferent = MSM.compute_single(project, 0.9, True)
 
-        measure_values = MSM.compute(project, 0.9)
+        print("{:<20} {:<30} {:<30}".format("Microservice", "Efferent", "Afferent"))
+        print("-" * 80)
+        for ms in project.microservices.values():
+            if ms.is_common_service:
+                continue
+            efferent_value = efferent.get(ms.name, "-")
+            afferent_value = afferent.get(ms.name, "-")
+            print("{:<20} {:<30} {:<30}".format(ms.name, efferent_value, afferent_value))
 
-        for measure in measure_values:
-            microservices = measure.split("->")
-            print(f"Value of measure between {microservices[0]} and {microservices[1]}: {measure_values[measure]}")
+        print()
+
+        pair_measure = MSM.compute_pair(project, 0.9)
+        print("{:<40} {:<30}".format("Pair", "Value"))
+        print("-" * 80)
+        for pair, value in pair_measure.items():
+            microservices = pair.split("->")
+            print("{:<40} {:<30}".format(microservices[0] + ", " + microservices[1], value))
+
+        print("*" * 80)
         print()
 
 

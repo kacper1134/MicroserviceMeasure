@@ -10,15 +10,18 @@ class MSM:
     inner_called_methods = set()
 
     @staticmethod
-    def compute(project: Project, alpha):
+    def compute_pair(project: Project, alpha):
         microservices = project.microservices
         measure_values = {}
         for microserviceA in microservices.values():
             for microserviceB in microservices.values():
                 if microserviceA == microserviceB:
                     continue
+                if microserviceA.is_common_service or microserviceB.is_common_service:
+                    continue
                 relations = MSM.__get_relations_between_microservices(microserviceA, microserviceB)
                 if len(relations) == 0:
+                    measure_values[microserviceA.name + "->" + microserviceB.name] = 0
                     continue
 
                 count_of_not_common_classes_from_microserviceA = len([cls for cls in microserviceA.classes.values()
@@ -59,10 +62,81 @@ class MSM:
         return measure_values
 
     @staticmethod
+    def compute_single(project: Project, alpha, afferent: bool):
+        microservices = project.microservices
+        measure_values = {}
+
+        for microservice in microservices.values():
+            if microservice.is_common_service:
+                continue
+            relations = MSM.__get_microservice_relations(project, microservice, afferent)
+            if len(relations) == 0:
+                measure_values[microservice.name] = 0
+                continue
+            count_of_not_common_classes_from_microservice = len([cls for cls in microservice.classes.values()
+                                                                 if not cls.is_class_from_common_package])
+            count_of_not_common_classes_from_other_than_microservice = len([cls for m in microservices.values()
+                                                                            if m != microservice
+                                                                            for cls in m.classes.values()
+                                                                            if not cls.is_class_from_common_package])
+            relations_classes_ratio = len(relations) / (count_of_not_common_classes_from_microservice *
+                                                        count_of_not_common_classes_from_other_than_microservice)
+            caller_microserviceMethods = {}
+            called_microserviceMethods = {}
+
+            for r in relations:
+                for relation in MSM.__get_full_relations_between_microservices(microservices[r.source_microservice],
+                                                                               microservices[r.target_microservice]):
+                    key = relation.source_microservice + "||" + relation.source_class + "||" + relation.target_class + \
+                          "||" + relation.target_microservice
+
+                    if key not in caller_microserviceMethods:
+                        caller_microserviceMethods[key] = set()
+                        called_microserviceMethods[key] = set()
+                    caller_microserviceMethods[key].add(relation.caller_method)
+                    called_microserviceMethods[key].add(relation.called_method)
+
+
+            measure_value = 0
+
+            for relation in relations:
+                key = relation.source_microservice + "||" + relation.source_class + "||" + relation.target_class + \
+                      "||" + relation.target_microservice
+                caller_methods = caller_microserviceMethods[key]
+                called_methods = called_microserviceMethods[key]
+
+                microserviceA = microservices[relation.source_microservice]
+                microserviceB = microservices[relation.target_microservice]
+
+                I_value = MSM.__visit_all_classes(microserviceA, microserviceA.classes.get(relation.source_class),
+                                                  True, alpha, caller_methods)
+                D_value = MSM.__visit_all_classes(microserviceB, microserviceB.classes.get(relation.target_class),
+                                                  False, alpha, called_methods)
+
+                measure_value += (I_value + D_value) / 2
+
+            measure_value = relations_classes_ratio * measure_value
+            measure_values[microservice.name] = measure_value / len(relations)
+
+        return measure_values
+
+    @staticmethod
     def __get_relations_between_microservices(microserviceA, microservicesB):
         if microserviceA.microservice_relations.get(microservicesB.name) is None:
             return []
         return microserviceA.microservice_relations[microservicesB.name]
+
+    @staticmethod
+    def __get_microservice_relations(project: Project, microservice: Microservice, afferent: bool):
+        result = []
+        for m in project.microservices.values():
+            for relations in m.microservice_relations.values():
+                for relation in relations:
+                    if relation.target_microservice == microservice.name and afferent:
+                        result.append(relation)
+                    if relation.source_microservice == microservice.name and not afferent:
+                        result.append(relation)
+        return result
 
     @staticmethod
     def __get_full_relations_between_microservices(microserviceA, microservicesB):

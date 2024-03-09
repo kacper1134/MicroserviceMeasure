@@ -6,7 +6,7 @@ from code.types.microservice import Microservice
 from code.types.project import Project
 
 
-class MSM:
+class MQM:
     inner_called_methods = set()
 
     @staticmethod
@@ -19,7 +19,7 @@ class MSM:
                     continue
                 if microserviceA.is_common_service or microserviceB.is_common_service:
                     continue
-                relations = MSM.__get_relations_between_microservices(microserviceA, microserviceB)
+                relations = MQM.__get_relations_between_microservices(microserviceA, microserviceB)
                 if len(relations) == 0:
                     measure_values[microserviceA.name + "->" + microserviceB.name] = 0
                     continue
@@ -35,7 +35,7 @@ class MSM:
                 caller_microserviceMethods = {}
                 called_microserviceMethods = {}
 
-                for relation in MSM.__get_full_relations_between_microservices(microserviceA, microserviceB):
+                for relation in MQM.__get_full_relations_between_microservices(microserviceA, microserviceB):
                     if relation.source_class + "||" + relation.target_class not in caller_microserviceMethods:
 
                         caller_microserviceMethods[relation.source_class + "||" + relation.target_class] = set()
@@ -50,9 +50,9 @@ class MSM:
                     caller_methods = caller_microserviceMethods[relation.source_class + "||" + relation.target_class]
                     called_methods = called_microserviceMethods[relation.source_class + "||" + relation.target_class]
 
-                    I_value = MSM.__visit_all_classes(microserviceA, microserviceA.classes.get(relation.source_class),
+                    I_value = MQM.__visit_all_classes(microserviceA, microserviceA.classes.get(relation.source_class),
                                                       True, alpha, caller_methods)
-                    D_value = MSM.__visit_all_classes(microserviceB, microserviceB.classes.get(relation.target_class),
+                    D_value = MQM.__visit_all_classes(microserviceB, microserviceB.classes.get(relation.target_class),
                                                       False, alpha, called_methods)
 
                     measure_value += (I_value + D_value) / 2
@@ -69,7 +69,7 @@ class MSM:
         for microservice in microservices.values():
             if microservice.is_common_service:
                 continue
-            relations = MSM.__get_microservice_relations(project, microservice, afferent)
+            relations = MQM.__get_microservice_relations(project, microservice, afferent)
             if len(relations) == 0:
                 measure_values[microservice.name] = 0
                 continue
@@ -85,7 +85,7 @@ class MSM:
             called_microserviceMethods = {}
 
             for r in relations:
-                for relation in MSM.__get_full_relations_between_microservices(microservices[r.source_microservice],
+                for relation in MQM.__get_full_relations_between_microservices(microservices[r.source_microservice],
                                                                                microservices[r.target_microservice]):
                     key = relation.source_microservice + "||" + relation.source_class + "||" + relation.target_class + \
                           "||" + relation.target_microservice
@@ -108,9 +108,9 @@ class MSM:
                 microserviceA = microservices[relation.source_microservice]
                 microserviceB = microservices[relation.target_microservice]
 
-                I_value = MSM.__visit_all_classes(microserviceA, microserviceA.classes.get(relation.source_class),
+                I_value = MQM.__visit_all_classes(microserviceA, microserviceA.classes.get(relation.source_class),
                                                   True, alpha, caller_methods)
-                D_value = MSM.__visit_all_classes(microserviceB, microserviceB.classes.get(relation.target_class),
+                D_value = MQM.__visit_all_classes(microserviceB, microserviceB.classes.get(relation.target_class),
                                                   False, alpha, called_methods)
 
                 measure_value += (I_value + D_value) / 2
@@ -146,7 +146,7 @@ class MSM:
 
     @staticmethod
     def __visit_all_classes(microservice: Microservice, startClass: Class, inverted: bool, alpha: float, depth_zero_methods):
-        result = MSM.__visit_depth_zero_methods(startClass, depth_zero_methods)
+        result = MQM.__visit_depth_zero_methods(startClass, depth_zero_methods)
 
         visited = set()
         visited.add(startClass.name)
@@ -159,11 +159,11 @@ class MSM:
 
             tmp_result = []
 
-            tmp_result.extend([MSM.__visit_relations(relations, visited, queue, microservice, depth, inverted, alpha)
+            tmp_result.extend([MQM.__visit_relations(relations, visited, queue, microservice, depth, inverted, alpha)
                                for relations in (class_obj.inverted_method_relations.values()
                                                  if inverted else class_obj.method_relations.values())])
 
-            tmp_result.extend([MSM.__visit_relations(relations, visited, queue, microservice, depth, inverted, alpha)
+            tmp_result.extend([MQM.__visit_relations(relations, visited, queue, microservice, depth, inverted, alpha)
                                for relations in (class_obj.inverted_field_relations.values()
                                                  if inverted else class_obj.field_relations.values())])
 
@@ -178,12 +178,12 @@ class MSM:
         used_number_of_lines = 0
         for depth_zero_method in depth_zero_methods:
             method = clazz.methods.get(depth_zero_method)
-            if method is None or method in MSM.inner_called_methods:
+            if method is None or method in MQM.inner_called_methods:
                 continue
             used_number_of_lines += method.number_of_lines
-            MSM.inner_called_methods.add(method)
-            used_number_of_lines += MSM.__visit_dependencies_of_called_method(clazz, method)
-        MSM.inner_called_methods.clear()
+            MQM.inner_called_methods.add(method)
+            used_number_of_lines += MQM.__visit_dependencies_of_called_method(clazz, method)
+        MQM.inner_called_methods.clear()
         used_number_of_lines += len(clazz.fields)
 
         return {"parameters_values": [1], "calculated_values": [used_number_of_lines / clazz.number_of_lines]}
@@ -194,7 +194,7 @@ class MSM:
         for relation in relations:
             next_class = relation.target_class if not inverted else relation.source_class
             if next_class not in visited:
-                used_lines_of_code = MSM.__calculate_used_lines_of_code(microservice.classes.get(relation.source_class),
+                used_lines_of_code = MQM.__calculate_used_lines_of_code(microservice.classes.get(relation.source_class),
                                                                         microservice.classes.get(relation.target_class))
                 visited.add(next_class)
                 queue.append((microservice.classes.get(next_class), depth + 1))
@@ -220,8 +220,8 @@ class MSM:
                     number_of_lines_of_called_method = calledMethod.number_of_lines
                     used_number_of_lines += number_of_lines_of_called_method
 
-                    MSM.inner_called_methods.add(calledMethod)
-                    used_number_of_lines += MSM.__visit_dependencies_of_called_method(calledClass, calledMethod)
+                    MQM.inner_called_methods.add(calledMethod)
+                    used_number_of_lines += MQM.__visit_dependencies_of_called_method(calledClass, calledMethod)
 
         return used_number_of_lines
 
@@ -236,8 +236,8 @@ class MSM:
 
                     method = calledClass.methods[called_class_relation.target_method_signature]
 
-                    if method not in MSM.inner_called_methods:
-                        MSM.inner_called_methods.add(method)
+                    if method not in MQM.inner_called_methods:
+                        MQM.inner_called_methods.add(method)
                         used_number_of_lines += method.number_of_lines + \
-                                                MSM.__visit_dependencies_of_called_method(calledClass, method)
+                                                MQM.__visit_dependencies_of_called_method(calledClass, method)
         return used_number_of_lines

@@ -1,8 +1,11 @@
+import numpy as np
+
 from code.data_reader.fields_data_reader import store_data_about_class_fields
 from code.data_reader.relations_data_reader import store_data_about_method_relations, store_data_about_field_relations, \
     store_data_about_microservice_relations
 from code.data_reader.size_data_reader import store_data_about_classes_size, store_data_about_methods_size
 from code.data_writer.metrics_values_data_writer import write_metrics_data_to_excel
+from code.experiment.pca_experiment import PcaExperiment
 from code.experiment.spearman_correlation import SpearmanCorrelation
 from code.measures.ADS import ADS
 from code.measures.AIS import AIS
@@ -168,6 +171,44 @@ def calculate_metrics_correlation(projects):
     print()
 
 
+def calculate_pca_for_metrics(projects):
+    MQM_values = []
+    MCI_values = []
+
+    eMQM = []
+    eMCI = []
+    ce = []
+    ads = []
+
+    aMQM = []
+    aMCI = []
+    ca = []
+    ais = []
+
+    for project in projects.values():
+        MQM_values.extend(list(MQM.compute_pair(project, 0.9).values()))
+        MCI_values.extend(list(MCI.compute_pair(project).values()))
+
+        eMQM.extend(list(MQM.compute_single(project, 0.9, False).values()))
+        eMCI.extend(list(MCI.compute_single(project, False).values()))
+        ce.extend(list(CE.compute_single(project).values()))
+        ads.extend(list(ADS.compute_single(project).values()))
+
+        aMQM.extend(list(MQM.compute_single(project, 0.9, True).values()))
+        aMCI.extend(list(MCI.compute_single(project, True).values()))
+        ca.extend(list(CA.compute_single(project).values()))
+        ais.extend(list(AIS.compute_single(project).values()))
+
+    pca = PcaExperiment()
+    print("PCA Analysis for Single Metrics")
+    pca.perform_pca(np.array([eMQM, aMQM, eMCI, aMCI, ce, ca, ads, ais]).transpose(), ["eMQM", "aMQM", "eMCI", "aMCI", "CE", "CA", "ADS", "AIS"])
+    print()
+
+    print("PCA Analysis for Pair Metrics")
+    pca.perform_pca(np.array([MQM_values, MCI_values]).transpose(), ["MQM", "MCI"])
+    print()
+
+
 def write_metrics_values_to_file(projects):
     for project in projects.values():
         CA_value = CA.compute_single(project)
@@ -217,6 +258,7 @@ def main():
     #show_metrics_values(projects)
     #calculate_metrics_correlation(projects)
     write_metrics_values_to_file(projects)
+    calculate_pca_for_metrics(projects)
 
 
 if __name__ == "__main__":

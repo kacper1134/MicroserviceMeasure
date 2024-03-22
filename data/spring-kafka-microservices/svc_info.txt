@@ -1,1 +1,0 @@
-ms-payment,commons,ms-orders,ms-stock

@@ -55,15 +55,24 @@ public class FeignRelationMicroserviceInspector {
             if(Utility.isApiFunction(method)) {
                 StringBuilder methodSignature = new StringBuilder(method.getName() + "(");
                 ClassInspector.getMethodSignature(methodSignature, method.getSignature());
-
+                String commonPath = Utility.getApiClassPathFromRequestMapping(clazz);
                 Endpoint endpoint = Endpoint.builder()
                         .microServiceName(microserviceName)
                         .className(clazz.getName())
                         .methodSignature(methodSignature.toString())
-                        .path(Utility.getPath(method, clazz))
+                        .path(commonPath + Utility.getPath(method, clazz))
                         .httpMethod(Utility.getHttpMethod(method))
                         .build();
-                endpoints.put(endpoint.getMicroServiceName() + "." + endpoint.getPath() + "." + endpoint.getHttpMethod(), endpoint);
+                if (!endpoint.getPath().startsWith("/")) {
+                    endpoint = Endpoint.builder()
+                            .microServiceName(microserviceName)
+                            .className(clazz.getName())
+                            .methodSignature(methodSignature.toString())
+                            .path("/" + commonPath + Utility.getPath(method, clazz))
+                            .httpMethod(Utility.getHttpMethod(method))
+                            .build();
+                }
+                endpoints.put(endpoint.getPath() + "." + endpoint.getHttpMethod(), endpoint);
             }
         }
     }
@@ -76,14 +85,26 @@ public class FeignRelationMicroserviceInspector {
                 StringBuilder methodSignature = new StringBuilder(method.getName() + "(");
                 ClassInspector.getMethodSignature(methodSignature, method.getSignature());
 
+                String additionalPath = Utility.getFeignClassPathFromClientName(clazz);
+
                 FeignRelation feignRelation = FeignRelation.builder()
                         .inMicroServiceName(microserviceName)
                         .outMicroServiceName(Utility.getFeignClientName(clazz))
                         .className(clazz.getName())
                         .methodSignature(methodSignature.toString())
-                        .path(Utility.getPath(method, clazz))
+                        .path(additionalPath + Utility.getPath(method, clazz))
                         .httpMethod(Utility.getHttpMethod(method))
                         .build();
+                if (!feignRelation.getPath().startsWith("/")) {
+                    feignRelation = FeignRelation.builder()
+                            .inMicroServiceName(microserviceName)
+                            .outMicroServiceName(Utility.getFeignClientName(clazz))
+                            .className(clazz.getName())
+                            .methodSignature(methodSignature.toString())
+                            .path("/" + additionalPath + Utility.getPath(method, clazz))
+                            .httpMethod(Utility.getHttpMethod(method))
+                            .build();
+                }
                 relations.put(feignRelation.getInMicroServiceName() + "." + feignRelation.getClassName() + "." + feignRelation.getMethodSignature(), feignRelation);
             }
         }
@@ -108,9 +129,9 @@ class MicroserviceRelationBuilder extends ExprEditor {
 
         if (FeignRelationMicroserviceInspector.relations.containsKey(feignRelationKey)) {
             FeignRelation relation = FeignRelationMicroserviceInspector.relations.get(feignRelationKey);
-            Endpoint endpoint = FeignRelationMicroserviceInspector.endpoints.get(relation.getOutMicroServiceName() + "." + relation.getPath() + "." + relation.getHttpMethod());
+            Endpoint endpoint = FeignRelationMicroserviceInspector.endpoints.get(relation.getPath() + "." + relation.getHttpMethod());
             if(endpoint != null) {
-                String info = inMicroserviceName + "||" + callerClass.getName() + "||" + relation.getOutMicroServiceName() + "||" + endpoint.getClassName() + "||" + relation.getMethodSignature() + "||" + endpoint.getMethodSignature();
+                String info = inMicroserviceName + "||" + callerClass.getName() + "||" + endpoint.getMicroServiceName() + "||" + endpoint.getClassName() + "||" + relation.getMethodSignature() + "||" + endpoint.getMethodSignature();
                 if (microserviceRelationsInfo.containsKey(info)) {
                     microserviceRelationsInfo.put(info, microserviceRelationsInfo.get(info) + 1);
                 } else {

@@ -11,9 +11,11 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
 import managers.MicroserviceClassesManager;
+import managers.ProjectClassesManager;
 import utility.Utility;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class KafkaRelationMicroserviceInspector {
 
@@ -26,11 +28,11 @@ public class KafkaRelationMicroserviceInspector {
             kafkaConsumers.clear();
         }
 
-        public static void processClass(String microserviceName, CtClass ctClass, MicroserviceClassesManager manager) {
+        public static void processClass(String microserviceName, CtClass ctClass, MicroserviceClassesManager manager, ProjectClassesManager projectClassesManager) {
             searchForMethodsWithKafkaConsumerAnnotation(microserviceName, ctClass);
             if(Utility.isKafkaConsumerClass(ctClass))
                 processKafkaListenerClass(microserviceName, ctClass);
-            searchForKafkaClassesUsage(microserviceName, ctClass, manager);
+            searchForKafkaClassesUsage(microserviceName, ctClass, manager, projectClassesManager);
         }
 
         public static HashMap<String, Integer> getMicroserviceRelationsInfo() {
@@ -67,11 +69,15 @@ public class KafkaRelationMicroserviceInspector {
                     StringBuilder methodSignature = new StringBuilder(method.getName() + "(");
                     ClassInspector.getMethodSignature(methodSignature, method.getSignature());
 
+                    ArrayList<String> topics = Utility.getKafkaTopics(method);
+                    topics = topics.stream().map(topic -> topic.replaceAll("['\\${}#]+", "").
+                            trim()).collect(Collectors.toCollection(ArrayList::new));
+
                     KafkaConsumer kafkaConsumer = KafkaConsumer.builder()
                             .microserviceName(microserviceName)
                             .className(clazz.getName())
                             .methodSignature(methodSignature.toString())
-                            .topics(Utility.getKafkaTopics(method))
+                            .topics(topics)
                             .build();
 
                     processKafkaConsumer(kafkaConsumer);
@@ -98,11 +104,15 @@ public class KafkaRelationMicroserviceInspector {
                         StringBuilder methodSignature = new StringBuilder(method.getName() + "(");
                         ClassInspector.getMethodSignature(methodSignature, method.getSignature());
 
+                        ArrayList<String> topics = Utility.getKafkaTopics(clazz);
+                        topics = topics.stream().map(topic -> topic.replaceAll("['\\${}#]+", "").
+                                trim()).collect(Collectors.toCollection(ArrayList::new));
+
                         KafkaConsumer kafkaConsumer = KafkaConsumer.builder()
                                 .microserviceName(microserviceName)
                                 .className(clazz.getName())
                                 .methodSignature(methodSignature.toString())
-                                .topics(Utility.getKafkaTopics(clazz))
+                                .topics(topics)
                                 .build();
 
                         processKafkaConsumer(kafkaConsumer);
@@ -110,13 +120,13 @@ public class KafkaRelationMicroserviceInspector {
                 }
             }
 
-        private static void searchForKafkaClassesUsage(String microserviceName, CtClass clazz, MicroserviceClassesManager manager) {
+        private static void searchForKafkaClassesUsage(String microserviceName, CtClass clazz, MicroserviceClassesManager manager, ProjectClassesManager projectClassesManager) {
             Set<CtMethod> methods = new HashSet<>(List.of(clazz.getDeclaredMethods()));
             methods.addAll(List.of(clazz.getMethods()));
 
             for (CtMethod method : methods) {
                 try {
-                    method.instrument(new KafkaRelationBuilder(microserviceName, clazz, method, manager));
+                    method.instrument(new KafkaRelationBuilder(microserviceName, clazz, method, manager, projectClassesManager));
                 } catch (CannotCompileException e) {
                     throw new RuntimeException(e);
                 }
@@ -152,6 +162,7 @@ class KafkaRelationBuilder extends ExprEditor {
     private final CtClass clazz;
     private final CtMethod method;
     private final MicroserviceClassesManager manager;
+    private final ProjectClassesManager projectClassesManager;
 
     @Override
     public void edit(MethodCall m) {
@@ -166,9 +177,10 @@ class KafkaRelationBuilder extends ExprEditor {
             int lineNumber = m.getLineNumber();
 
             String instruction = JavaFileReader.extractInstructionFromLine(filePath, lineNumber);
-            String topic = Utility.extractKafkaTopicFromKafkaInstruction(filePath, instruction, manager, clazz.getName());
+            String topic = Utility.extractKafkaTopicFromKafkaInstruction(filePath, instruction, manager, clazz.getName(), projectClassesManager);
 
             if (Objects.equals(m.getMethodName(), "send") && topic != null) {
+                topic = topic.replaceAll("['\\${}#]+", "").trim();
                 KafkaProducer producer = KafkaProducer.builder()
                         .microserviceName(microserviceName)
                         .className(clazz.getName())
@@ -179,6 +191,7 @@ class KafkaRelationBuilder extends ExprEditor {
                 KafkaRelationMicroserviceInspector.kafkaProducers.add(producer);
             }
             else if(topic != null) {
+                topic = topic.replaceAll("['\\${}#]+", "").trim();
                 KafkaRelationMicroserviceInspector.processKafkaConsumer(KafkaConsumer.builder()
                         .microserviceName(microserviceName)
                         .className(clazz.getName())

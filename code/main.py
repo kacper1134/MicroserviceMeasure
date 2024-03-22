@@ -205,7 +205,7 @@ def calculate_pca_for_metrics(projects):
     print()
 
     print("PCA Analysis for Pair Metrics")
-    pca.perform_pca(np.array([MQM_values, MCI_values]).transpose(), ["MQM", "MCI"])
+    pca.perform_pca(np.array([MCI_values, MQM_values]).transpose(), ["MCI", "MQM"])
     print()
 
 
@@ -258,7 +258,7 @@ def main():
     #show_metrics_values(projects)
     #calculate_metrics_correlation(projects)
     write_metrics_values_to_file(projects)
-    calculate_pca_for_metrics(projects)
+    #calculate_pca_for_metrics(projects)
 
 
 if __name__ == "__main__":

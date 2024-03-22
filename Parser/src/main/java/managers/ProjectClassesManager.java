@@ -25,6 +25,15 @@ public class ProjectClassesManager {
         }
     }
 
+    public CtClass getClass(String className) {
+        try {
+            return pool.get(className);
+        } catch (Exception e) {
+            LOG.error("Error getting class: " + e.getMessage());
+            return null;
+        }
+    }
+
     public void loadClass(String pathToClass, String microserviceName) {
         try {
             CtClass clazz = pool.makeClass(Files.newInputStream(Paths.get(pathToClass)));

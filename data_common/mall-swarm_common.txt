@@ -1,1 +1,1 @@
-mall-common,mall-mbg
+mall-common,mall-mbg,mall-gateway,mall-monitor

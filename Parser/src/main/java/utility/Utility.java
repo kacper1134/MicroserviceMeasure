@@ -5,6 +5,8 @@ import javassist.CannotCompileException;
 import javassist.CtMethod;
 import lombok.SneakyThrows;
 import managers.MicroserviceClassesManager;
+import managers.ProjectClassesManager;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.kafka.annotation.KafkaHandler;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -131,6 +133,32 @@ public class Utility {
     }
 
     @SneakyThrows
+    public static String getFeignClassPathFromClientName(CtClass ctClass) {
+        FeignClient feignClient = (FeignClient) ctClass.getAnnotation(FeignClient.class);
+        String name = feignClient.value();
+        if (name.isEmpty()) {
+            name = feignClient.name();
+        }
+        if (!name.contains("/")) {
+            return "";
+        }
+        name = name.strip();
+        return name.substring(name.indexOf("/") + 1);
+    }
+
+    @SneakyThrows
+    public static String getApiClassPathFromRequestMapping(CtClass ctClass) {
+        RequestMapping requestMapping = (RequestMapping) ctClass.getAnnotation(RequestMapping.class);
+        if (requestMapping == null) {
+            return "";
+        }
+        if (requestMapping.path().length == 0) {
+            return "";
+        }
+        return requestMapping.path()[0];
+    }
+
+    @SneakyThrows
     public static ArrayList<String> getKafkaTopics(CtMethod ctMethod) {
         KafkaListener kafkaListener = (KafkaListener) ctMethod.getAnnotation(KafkaListener.class);
         if(kafkaListener != null) {
@@ -161,14 +189,15 @@ public class Utility {
         }).collect(Collectors.toSet());
     }
 
-    public static String extractKafkaTopicFromKafkaInstruction(String filePath, String instruction, MicroserviceClassesManager manager, String fullCurrentClassName) {
+    @SneakyThrows
+    public static String extractKafkaTopicFromKafkaInstruction(String filePath, String instruction, MicroserviceClassesManager manager, String fullCurrentClassName, ProjectClassesManager projectClassesManager) {
         String topicParameterValue = extractTopicParameterValueFromInstruction(instruction);
 
-        if(topicParameterValue == null) {
+        if (topicParameterValue == null) {
             return null;
         }
 
-        if(isStringLiteral(topicParameterValue)) {
+        if (isStringLiteral(topicParameterValue)) {
             return topicParameterValue.substring(1, topicParameterValue.length() - 1);
         }
 
@@ -179,6 +208,17 @@ public class Utility {
         if (simpleClassName != null) {
             fullClassName = JavaFileReader.getFullClassNameFromImportStatement(simpleClassName, filePath);
         }
+
+        Value fieldValue = null;
+        try {
+            fieldValue = (Value) projectClassesManager.getClass(fullClassName).getField(fieldName).getAnnotation(Value.class);
+        }
+        catch (Exception ignored){
+        }
+        if (fieldValue != null) {
+            return fieldValue.value();
+        }
+
 
         topicParameterValue = JavaFileReader.getValueOfField(manager.getPathToJavaFile(fullClassName), fieldName);
 
@@ -191,7 +231,7 @@ public class Utility {
             }
         }
 
-        if(topicParameterValue != null && isStringLiteral(topicParameterValue)) {
+        if (topicParameterValue != null && isStringLiteral(topicParameterValue)) {
             return topicParameterValue.substring(1, topicParameterValue.length() - 1);
         }
 
@@ -199,9 +239,9 @@ public class Utility {
     }
 
     private static String extractTopicParameterValueFromInstruction(String instruction) {
-        Pattern sendPattern = Pattern.compile("\\.send\\(\\s*([^,]+)\\s*,");
-        Pattern receivePattern = Pattern.compile("\\.receive\\(\\s*([^,]+)\\s*,");
-        Pattern streamPattern = Pattern.compile("\\.stream\\(\\s*([^,]+)\\s*,");
+        Pattern sendPattern = Pattern.compile("\\.send\\(\\s*([^,\\s]+)");
+        Pattern receivePattern = Pattern.compile("\\.receive\\(\\s*([^,\\s]+)");
+        Pattern streamPattern = Pattern.compile("\\.stream\\(\\s*([^,\\s]+)");
 
         Matcher sendMatcher = sendPattern.matcher(instruction);
         Matcher receiveMatcher = receivePattern.matcher(instruction);

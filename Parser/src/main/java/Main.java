@@ -77,7 +77,7 @@ public class Main {
 
                 standardMicroserviceRelations.putAll(StandardRelationMicroserviceInspector.processClass(microserviceName, clazz, projectClassesManager));
                 FeignRelationMicroserviceInspector.processClass(microserviceName, clazz);
-                KafkaRelationMicroserviceInspector.processClass(microserviceName, clazz, manager);
+                KafkaRelationMicroserviceInspector.processClass(microserviceName, clazz, manager, projectClassesManager);
 
                 fieldsInfo.addAll(ClassInspector.getFieldsInfo(clazz));
 

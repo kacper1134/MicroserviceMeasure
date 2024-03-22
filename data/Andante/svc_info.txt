@@ -1,0 +1,1 @@
+activity-client,forum-client,product-client,activity-service,order-client,forum-service,product-service,utility,order-service,eureka-server,gateway

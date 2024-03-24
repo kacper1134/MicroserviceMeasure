@@ -4,10 +4,7 @@ import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.*;
 import utility.Utility;
 
 import java.util.*;
@@ -86,26 +83,25 @@ public class FeignRelationMicroserviceInspector {
                 ClassInspector.getMethodSignature(methodSignature, method.getSignature());
 
                 String additionalPath = Utility.getFeignClassPathFromClientName(clazz);
+                String mainPath = Utility.getPath(method, clazz);
+
+                if (!additionalPath.startsWith("/") && !additionalPath.isEmpty()) {
+                    additionalPath = "/" + additionalPath;
+                }
+
+                if (!mainPath.startsWith("/")&& !mainPath.isEmpty()) {
+                    mainPath = "/" + mainPath;
+                }
 
                 FeignRelation feignRelation = FeignRelation.builder()
                         .inMicroServiceName(microserviceName)
                         .outMicroServiceName(Utility.getFeignClientName(clazz))
                         .className(clazz.getName())
                         .methodSignature(methodSignature.toString())
-                        .path(additionalPath + Utility.getPath(method, clazz))
+                        .path(additionalPath + mainPath)
                         .httpMethod(Utility.getHttpMethod(method))
                         .build();
-                if (!feignRelation.getPath().startsWith("/")) {
-                    feignRelation = FeignRelation.builder()
-                            .inMicroServiceName(microserviceName)
-                            .outMicroServiceName(Utility.getFeignClientName(clazz))
-                            .className(clazz.getName())
-                            .methodSignature(methodSignature.toString())
-                            .path("/" + additionalPath + Utility.getPath(method, clazz))
-                            .httpMethod(Utility.getHttpMethod(method))
-                            .build();
-                }
-                relations.put(feignRelation.getInMicroServiceName() + "." + feignRelation.getClassName() + "." + feignRelation.getMethodSignature(), feignRelation);
+                relations.put(feignRelation.getClassName() + "." + feignRelation.getMethodSignature(), feignRelation);
             }
         }
     }
@@ -119,13 +115,14 @@ class MicroserviceRelationBuilder extends ExprEditor {
     private final HashMap<String, Integer> microserviceRelationsInfo;
 
     @Override
+    @SneakyThrows
     public void edit(MethodCall m) {
         StringBuilder calledMethodSignature = new StringBuilder(m.getMethodName() + "(");
         StringBuilder callerMethodSignature = new StringBuilder(callerMethod.getName() + "(");
         ClassInspector.getMethodSignature(calledMethodSignature, m.getSignature());
         ClassInspector.getMethodSignature(callerMethodSignature, callerMethod.getSignature());
 
-        String feignRelationKey = inMicroserviceName + "." + m.getClassName() + "." + calledMethodSignature;
+        String feignRelationKey = m.getClassName() + "." + calledMethodSignature;
 
         if (FeignRelationMicroserviceInspector.relations.containsKey(feignRelationKey)) {
             FeignRelation relation = FeignRelationMicroserviceInspector.relations.get(feignRelationKey);

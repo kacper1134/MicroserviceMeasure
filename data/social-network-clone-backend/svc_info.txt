@@ -1,1 +1,0 @@
-post-service,common,security-service,api-gateway,user-service,follower-service,eureka-server,file-service,notification-service

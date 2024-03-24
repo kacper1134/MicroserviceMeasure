@@ -1,0 +1,1 @@
+hr-oauth,hr-worker,hr-api-gateway-zull,hr-eureka-server,hr-payroll,hr-user,hr-config-server

@@ -1,0 +1,1 @@
+hanzo-demo-test,hanzo-log-producer,hanzo-cloud-system,hanzo-starter-kafka,hanzo-auth-client,hanzo-gateway-server,hanzo-cloud-monitor,hanzo-starter-log,hanzo-message-consumer-one,hanzo-auth-center,hanzo-cloud-common

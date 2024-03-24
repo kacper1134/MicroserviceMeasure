@@ -1,1 +1,1 @@
-mall-admin,mall-search,mall-demo,mall-mbg,mall-auth,mall-monitor,mall-common,mall-gateway,mall-portal
+mall-search,mall-auth,mall-monitor,mall-common,mall-mbg,mall-admin,mall-demo,mall-gateway,mall-portal

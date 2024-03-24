@@ -85,6 +85,7 @@ public class Utility {
             if (methods.length > 0) {
                 return methods[0].toString();
             }
+            return "GET";
         }
         return "";
     }
@@ -139,11 +140,14 @@ public class Utility {
         if (name.isEmpty()) {
             name = feignClient.name();
         }
-        if (!name.contains("/")) {
-            return "";
+
+        if (!feignClient.path().isEmpty()) {
+            String path = feignClient.path();
+            return path.isEmpty() ? "" : path;
         }
+
         name = name.strip();
-        return name.substring(name.indexOf("/") + 1);
+        return name.contains("/") ? name.substring(name.indexOf("/") + 1): "";
     }
 
     @SneakyThrows
@@ -155,7 +159,7 @@ public class Utility {
         if (requestMapping.path().length == 0) {
             return "";
         }
-        return requestMapping.path()[0];
+        return requestMapping.path()[0].strip();
     }
 
     @SneakyThrows

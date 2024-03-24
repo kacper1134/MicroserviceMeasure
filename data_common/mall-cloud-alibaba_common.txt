@@ -1,0 +1,1 @@
+cms-common,cms-mbg,content-common,content-mbg,mall-common,mall-gateway,mall-mbg,member-common,member-mbg,oms-mbg,order-common,order-mbg,pms-common,pms-mbg,product-common,product-mbg,sms-mbg,ums-mbg,coupon-common,coupon-mbg

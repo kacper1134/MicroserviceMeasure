@@ -29,6 +29,10 @@ class MQM:
                 count_of_not_common_classes_from_microserviceB = len([cls for cls in microserviceB.classes.values()
                                                                       if not cls.is_class_from_common_package])
 
+                if count_of_not_common_classes_from_microserviceA == 0 or count_of_not_common_classes_from_microserviceB == 0:
+                    measure_values[microserviceA.name + "->" + microserviceB.name] = 0
+                    continue
+
                 relations_classes_ratio = len(relations) / (count_of_not_common_classes_from_microserviceA *
                                                             count_of_not_common_classes_from_microserviceB)
 
@@ -79,6 +83,11 @@ class MQM:
                                                                             if m != microservice
                                                                             for cls in m.classes.values()
                                                                             if not cls.is_class_from_common_package])
+
+            if count_of_not_common_classes_from_microservice == 0 or count_of_not_common_classes_from_other_than_microservice == 0:
+                measure_values[microservice.name] = 0
+                continue
+
             relations_classes_ratio = len(relations) / (count_of_not_common_classes_from_microservice *
                                                         count_of_not_common_classes_from_other_than_microservice)
             caller_microserviceMethods = {}
@@ -186,7 +195,8 @@ class MQM:
         MQM.inner_called_methods.clear()
         used_number_of_lines += len(clazz.fields)
 
-        return {"parameters_values": [1], "calculated_values": [used_number_of_lines / clazz.number_of_lines]}
+        return {"parameters_values": [1], "calculated_values": [0 if clazz.number_of_lines == 0
+                                                                else used_number_of_lines / clazz.number_of_lines]}
 
     @staticmethod
     def __visit_relations(relations, visited, queue, microservice, depth, inverted: bool, alpha: float):
@@ -216,6 +226,8 @@ class MQM:
         for method_relations in callerClass.method_relations.values():
             for relation in method_relations:
                 if relation.target_class == calledClass.name:
+                    if calledClass.methods.get(relation.target_method_signature) is None:
+                        continue
                     calledMethod = calledClass.methods[relation.target_method_signature]
                     number_of_lines_of_called_method = calledMethod.number_of_lines
                     used_number_of_lines += number_of_lines_of_called_method

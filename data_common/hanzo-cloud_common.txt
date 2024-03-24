@@ -1,0 +1,1 @@
+hanzo-cloud-common,hanzo-starter-kafka,hanzo-message-consumer-one,hanzo-auth-client,hanzo-gateway-server,hanzo-cloud-monitor

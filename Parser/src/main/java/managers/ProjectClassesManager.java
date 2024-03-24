@@ -16,6 +16,8 @@ public class ProjectClassesManager {
 
     private static final Logger LOG = LogManager.getLogger(MicroserviceClassesManager.class);
 
+    private static final HashMap<String, String> javaPaths = new HashMap<>();
+
     public String getClassMicroserviceName(String className) {
         try {
             return classNamesToMicroserviceName.get(className);
@@ -23,6 +25,10 @@ public class ProjectClassesManager {
             LOG.error("Error getting class: " + e.getMessage());
             return null;
         }
+    }
+
+    public String getPathToJavaFile(String className) {
+        return javaPaths.get(className);
     }
 
     public CtClass getClass(String className) {
@@ -38,6 +44,10 @@ public class ProjectClassesManager {
         try {
             CtClass clazz = pool.makeClass(Files.newInputStream(Paths.get(pathToClass)));
             classNamesToMicroserviceName.put(clazz.getName(), microserviceName);
+            javaPaths.put(clazz.getName(), pathToClass
+                    .replace("\\target\\classes\\", "\\src\\main\\java\\")
+                    .replace("\\target\\test-classes\\", "\\src\\test\\java\\")
+                    .replace(".class", ".java"));
         } catch (Exception e) {
             LOG.error("Error loading class: " + e.getMessage());
         }

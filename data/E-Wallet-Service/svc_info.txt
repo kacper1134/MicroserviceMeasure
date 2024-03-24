@@ -1,1 +1,1 @@
-transaction-service,user-service,notification-service,wallet-service
+user-service,notification-service,transaction-service,wallet-service

@@ -164,6 +164,8 @@ class MQM:
         while queue:
             node: Tuple[Class, int] = queue.pop(0)
             class_obj: Class = node[0]
+            if class_obj is None:
+                continue
             depth: int = node[1]
 
             tmp_result = []
@@ -216,6 +218,8 @@ class MQM:
 
     @staticmethod
     def __calculate_used_lines_of_code(callerClass: Class, calledClass: Class):
+        if calledClass is None or callerClass is None:
+            return 0
         used_number_of_lines = 0
         for field_relations in callerClass.field_relations.values():
             for relation in field_relations:

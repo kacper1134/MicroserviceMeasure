@@ -39,7 +39,7 @@ public class Utility {
             return false;
         }
 
-        return hasAnnotation(ctClass, FeignClient.class);
+        return hasAnnotation(ctClass, FeignClient.class) || hasAnnotation(ctClass,  org.springframework.cloud.netflix.feign.FeignClient.class);
     }
 
     public static boolean isApiFunction(CtMethod ctMethod) {
@@ -130,12 +130,18 @@ public class Utility {
     @SneakyThrows
     public static String getFeignClientName(CtClass ctClass) {
         FeignClient feignClient = (FeignClient) ctClass.getAnnotation(FeignClient.class);
+        if (feignClient == null) {
+            return "";
+        }
         return feignClient.value();
     }
 
     @SneakyThrows
     public static String getFeignClassPathFromClientName(CtClass ctClass) {
         FeignClient feignClient = (FeignClient) ctClass.getAnnotation(FeignClient.class);
+        if (feignClient == null) {
+            return "";
+        }
         String name = feignClient.value();
         if (name.isEmpty()) {
             name = feignClient.name();

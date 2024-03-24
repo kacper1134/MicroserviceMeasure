@@ -1,1 +1,1 @@
-reading-cloud-common,reading-cloud-account-feign-client,reading-cloud-book,reading-cloud-gateway,reading-cloud-homepage,reading-cloud-account,reading-cloud-book-feign-client
+reading-cloud-account,reading-cloud-book-feign-client,reading-cloud-account-feign-client,reading-cloud-homepage,reading-cloud-common,reading-cloud-gateway,reading-cloud-book

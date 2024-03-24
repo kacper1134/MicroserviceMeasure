@@ -1,0 +1,1 @@
+ancba-task-xxl,ancba-common,ancba-blog,ancba-gateway,ancba-shrio-demo,ancba-user,ancba-admin,ancba-authorizer-oauth2

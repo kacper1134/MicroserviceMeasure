@@ -1,0 +1,1 @@
+spring-cloud-api-gateway,notification-service,discovery-server,inventory-service,product-service,order-service

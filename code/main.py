@@ -4,6 +4,7 @@ from code.data_reader.fields_data_reader import store_data_about_class_fields
 from code.data_reader.relations_data_reader import store_data_about_method_relations, store_data_about_field_relations, \
     store_data_about_microservice_relations
 from code.data_reader.size_data_reader import store_data_about_classes_size, store_data_about_methods_size
+from code.data_writer.experiments_data_writer import write_metrics_correlation_data_to_excel, save_correlation_bar_chart
 from code.data_writer.metrics_values_data_writer import write_metrics_data_to_excel
 from code.experiment.pca_experiment import PcaExperiment
 from code.experiment.spearman_correlation import SpearmanCorrelation
@@ -118,57 +119,43 @@ def show_metrics_values(projects):
         print()
 
 
-def calculate_metrics_correlation(projects):
-    MQM_values = []
-    MCI_values = []
+def calculate_metrics_correlation(projects, alpha_values):
+    MQM_result, eMQM_result, aMQM_result = [], [], []
+    for alpha in alpha_values:
+        MQM_values, MCI_values, CaT_values = [], [], []
+        eMQM, eMCI, ce, ads = [], [], [], []
+        aMQM, aMCI, ca, ais = [], [], [], []
 
-    eMQM = []
-    eMCI = []
-    ce = []
-    ads = []
+        for project in projects.values():
+            MQM_values.extend(list(MQM.compute_pair(project, alpha).values()))
+            MCI_values.extend(list(MCI.compute_pair(project).values()))
+            CaT_values.extend(list(CA.compute_pair(project).values()))
 
-    aMQM = []
-    aMCI = []
-    ca = []
-    ais = []
+            eMQM.extend(list(MQM.compute_single(project, alpha, False).values()))
+            eMCI.extend(list(MCI.compute_single(project, False).values()))
+            ce.extend(list(CE.compute_single(project).values()))
+            ads.extend(list(ADS.compute_single(project).values()))
 
-    for project in projects.values():
-        MQM_values.extend(list(MQM.compute_pair(project, 0.9).values()))
-        MCI_values.extend(list(MCI.compute_pair(project).values()))
+            aMQM.extend(list(MQM.compute_single(project, alpha, True).values()))
+            aMCI.extend(list(MCI.compute_single(project, True).values()))
+            ca.extend(list(CA.compute_single(project).values()))
+            ais.extend(list(AIS.compute_single(project).values()))
 
-        eMQM.extend(list(MQM.compute_single(project, 0.9, False).values()))
-        eMCI.extend(list(MCI.compute_single(project, False).values()))
-        ce.extend(list(CE.compute_single(project).values()))
-        ads.extend(list(ADS.compute_single(project).values()))
+        pair_metrics_values = [MQM_values, MCI_values, CaT_values]
+        efferent_metrics_values = [eMQM, eMCI, ce, ads]
+        afferent_metrics_values = [aMQM, aMCI, ca, ais]
 
-        aMQM.extend(list(MQM.compute_single(project, 0.9, True).values()))
-        aMCI.extend(list(MCI.compute_single(project, True).values()))
-        ca.extend(list(CA.compute_single(project).values()))
-        ais.extend(list(AIS.compute_single(project).values()))
+        MQM_result.append(str(alpha) + "||" + "||".join(list(map(str, SpearmanCorrelation.calculate(pair_metrics_values)))))
+        eMQM_result.append(str(alpha) + "||" + "||".join(list(map(str, SpearmanCorrelation.calculate(efferent_metrics_values)))))
+        aMQM_result.append(str(alpha) + "||" + "||".join(list(map(str, SpearmanCorrelation.calculate(afferent_metrics_values)))))
 
-    print("Pair Metrics")
-    print("*" * 60)
-    pair_metrics_values = [MQM_values, MCI_values]
-    pair_metrics_names = ["MQM", "MCI"]
-    SpearmanCorrelation.calculate(pair_metrics_values, pair_metrics_names)
-    print("*" * 60)
-    print()
+    write_metrics_correlation_data_to_excel(MQM_result, ["alpha", "MCI", "CaT"], "MQM")
+    write_metrics_correlation_data_to_excel(eMQM_result, ["alpha", "eMCI", "CE", "ADS"], "eMQM")
+    write_metrics_correlation_data_to_excel(aMQM_result, ["alpha", "aMCI", "CA", "AIS"], "aMQM")
 
-    print("Efferent Metrics")
-    print("*" * 60)
-    efferent_metrics_values = [eMQM, eMCI, ce, ads]
-    efferent_metrics_names = ["eMQM", "eMCI", "CE", "ADS"]
-    SpearmanCorrelation.calculate(efferent_metrics_values, efferent_metrics_names)
-    print("*" * 60)
-    print()
-
-    print("Afferent Metrics")
-    print("*" * 60)
-    afferent_metrics_values = [aMQM, aMCI, ca, ais]
-    afferent_metrics_names = ["aMQM", "aMCI", "CA", "AIS"]
-    SpearmanCorrelation.calculate(afferent_metrics_values, afferent_metrics_names)
-    print("*" * 60)
-    print()
+    save_correlation_bar_chart("MQM", ["MCI", "CaT"], MQM_result)
+    save_correlation_bar_chart("eMQM", ["eMCI", "CE", "ADS"], eMQM_result)
+    save_correlation_bar_chart("aMQM", ["aMCI", "CA", "AIS"], aMQM_result)
 
 
 def calculate_pca_for_metrics(projects):
@@ -256,8 +243,8 @@ def main():
     store_data_about_common_microservices(projects)
 
     #show_metrics_values(projects)
-    #calculate_metrics_correlation(projects)
-    write_metrics_values_to_file(projects)
+    calculate_metrics_correlation(projects, [0, 0.2, 0.5, 0.7, 0.9, 1.0])
+    #write_metrics_values_to_file(projects)
     #calculate_pca_for_metrics(projects)
 
 

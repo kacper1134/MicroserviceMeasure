@@ -1,11 +1,12 @@
 import numpy
 import numpy as np
+from matplotlib import pyplot as plt
 from scipy.stats import stats
 
 
 class SpearmanCorrelation:
     @staticmethod
-    def calculate(data, metrics_names):
+    def calculate(data):
         data = np.array(data)
         rho, p_value = stats.spearmanr(data, axis=1)
 
@@ -15,6 +16,4 @@ class SpearmanCorrelation:
         else:
             table = rho
 
-        print(" " * 10 + " ".join(f"{metric:<10}" for metric in metrics_names))
-        for i, row in enumerate(table):
-            print(f"{metrics_names[i]:<10}" + " ".join(f"{val:<10.2f}" for val in row))
+        return table[0, ][1:len(table)]

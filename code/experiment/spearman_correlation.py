@@ -16,4 +16,4 @@ class SpearmanCorrelation:
         else:
             table = rho
 
-        return table[0, ][1:len(table)]
+        return table[0, ][1:len(table)], p_value[0, ][1:len(p_value)]

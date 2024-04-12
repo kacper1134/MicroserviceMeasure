@@ -5,8 +5,9 @@ from code.data_reader.relations_data_reader import store_data_about_method_relat
     store_data_about_microservice_relations
 from code.data_reader.size_data_reader import store_data_about_classes_size, store_data_about_methods_size
 from code.data_writer.experiments_data_writer import write_metrics_correlation_data_to_excel, \
-    save_correlation_bar_chart, write_metrics_pca_data_to_excel
+    save_correlation_bar_chart, write_metrics_pca_data_to_excel, wrote_metrics_discriminative_power_data_to_excel
 from code.data_writer.metrics_values_data_writer import write_metrics_data_to_excel
+from code.experiment.discriminative_power_experiment import DiscriminativePowerExperiment
 from code.experiment.pca_experiment import PcaExperiment
 from code.experiment.spearman_correlation import SpearmanCorrelation
 from code.measures.ADS import ADS
@@ -242,15 +243,29 @@ def write_metrics_values_to_file(projects):
         pair_microservices_header = ["Source Microservice", "Destination Microservice", "MQM", "MCI"]
         write_metrics_data_to_excel(project, pair_microservices_data, pair_microservices_header, "Pair Microservices")
 
+    print("Metrics data saved to excel")
+
+
+def calculate_metrics_discriminative_power(projects):
+    pair_results = DiscriminativePowerExperiment.get_discriminative_power_for_pair_metrics(projects)
+    wrote_metrics_discriminative_power_data_to_excel(pair_results, ["", "MQM", "MCI", "CaT"], list(projects.values()), "Pair Metrics")
+    aff_results = DiscriminativePowerExperiment.get_discriminative_power_for_afferent_metrics(projects)
+    wrote_metrics_discriminative_power_data_to_excel(aff_results, ["", "aMQM", "aMCI", "CA", "AIS"], list(projects.values()), "Afferent Metrics")
+    eff_results = DiscriminativePowerExperiment.get_discriminative_power_for_efferent_metrics(projects)
+    wrote_metrics_discriminative_power_data_to_excel(eff_results, ["", "eMQM", "eMCI", "CE", "ADS"], list(projects.values()), "Efferent Metrics")
+
+    print("Discriminative power data saved to excel")
+
 
 def main():
     projects = store_data_about_projects()
     fix_incorrect_classes(projects)
     store_data_about_common_microservices(projects)
 
-    #write_metrics_values_to_file(projects)
+    write_metrics_values_to_file(projects)
     calculate_metrics_correlation(projects, [0, 0.2, 0.5, 0.7, 0.9, 1.0])
     calculate_pca_for_metrics(projects, [0, 0.2, 0.5, 0.7, 0.9, 1.0])
+    calculate_metrics_discriminative_power(projects)
 
 
 if __name__ == "__main__":
